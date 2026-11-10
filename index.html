@@ -340,6 +340,7 @@
             font-size: 0.95rem;
         }
 
+        /* INDIKATOR TITIK & ANGKA KODE DI BAWAHNYA */
         .peer-status-box {
             position: absolute;
             top: 2vh;
@@ -469,7 +470,7 @@
         </div>
     </div>
 
-    <!-- FIREBASE SDK ES MODULES -->
+    <!-- FIREBASE SDK v10 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -700,7 +701,9 @@
             const now = Date.now();
             remainingIntervalMs = targetEndTimeInterval - now;
             remainingTotalMs = targetEndTimeGrandTotal - now;
-            elapsedTimeAccumulated = now - timerStartTimestamp;
+            if (timerStartTimestamp) {
+                elapsedTimeAccumulated = now - timerStartTimestamp;
+            }
             syncToFirebase();
         }
 
@@ -836,14 +839,13 @@
             resetTimer();
         }
 
-        /* INTEGRASI FIREBASE REALTIME DATABASE PRESISI MILIDETIK */
+        /* INTEGRASI REALTIME DATABASE FIREBASE */
         const roomPin = Math.floor(1000 + Math.random() * 9000).toString();
         document.getElementById('pinDisplay').textContent = roomPin;
 
         const sessionRef = ref(db, 'sessions/' + roomPin);
         const cmdRef = ref(db, 'sessions/' + roomPin + '/command');
 
-        // Status Koneksi Firebase
         const connectedRef = ref(db, ".info/connected");
         onValue(connectedRef, (snap) => {
             if (snap.val() === true) {
@@ -867,10 +869,9 @@
             });
         }
 
-        // Mendengarkan Perintah Remote dari HP
         onValue(cmdRef, (snapshot) => {
             const command = snapshot.val();
-            if (!command) return;
+            if (!command || !command.action) return;
 
             if (command.action === 'TOGGLE') toggleTimer();
             else if (command.action === 'RESET') resetTimer();
@@ -886,7 +887,6 @@
                 loadIntervalSintaks(currentIntervalIndex);
             }
 
-            // Hapus perintah setelah dieksekusi
             set(cmdRef, null);
         });
 

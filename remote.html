@@ -112,7 +112,7 @@
         </div>
     </div>
 
-    <!-- FIREBASE SDK ES MODULES -->
+    <!-- FIREBASE SDK v10 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -150,7 +150,7 @@
             return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
         }
 
-        document.getElementById('btnConnect').addEventListener('click', () => {
+        function connectRemote() {
             const pin = document.getElementById('pinInput').value;
             if (pin.length === 4) {
                 activePin = pin;
@@ -180,7 +180,7 @@
             } else {
                 alert('Masukkan 4 Angka PIN yang tertera di layar laptop!');
             }
-        });
+        }
 
         function startHighPrecisionTicker() {
             setInterval(() => {
@@ -188,7 +188,7 @@
                 if (remoteIsRunning && remoteTargetInterval && remoteTargetTotal) {
                     const intervalSec = Math.max(0, Math.ceil((remoteTargetInterval - now) / 1000));
                     const grandSec = Math.max(0, Math.ceil((remoteTargetTotal - now) / 1000));
-                    const countUpSec = Math.floor((now - remoteStartTimestamp) / 1000);
+                    const countUpSec = remoteStartTimestamp ? Math.floor((now - remoteStartTimestamp) / 1000) : 0;
 
                     document.getElementById('remoteIntervalDisp').textContent = formatTime(intervalSec);
                     document.getElementById('remoteTotalDisp').textContent = formatTime(grandSec);
@@ -210,6 +210,7 @@
             }
         }
 
+        document.getElementById('btnConnect').addEventListener('click', connectRemote);
         window.sendCmd = sendCmd;
     </script>
 </body>
