@@ -168,16 +168,16 @@
             btn.disabled = true;
 
             try {
-                // Cek ketersediaan sesi di Firebase
+                // Ambil snapshot room
                 const snap = await get(sessionRef);
                 if (!snap.exists()) {
-                    alert('Kode PIN ' + pin + ' tidak ditemukan / room belum aktif!');
+                    alert('PIN ' + pin + ' belum aktif! Silakan klik tombol ikon HP di laptop terlebih dahulu.');
                     btn.textContent = "HUBUNGKAN";
                     btn.disabled = false;
                     return;
                 }
 
-                // Berhasil terhubung, daftarkan listener realtime
+                // Berhasil terhubung, aktifkan sinkronisasi realtime
                 onValue(sessionRef, (snapshot) => {
                     const data = snapshot.val();
                     if (data) {
@@ -195,7 +195,6 @@
                         remoteGrandSec = data.grandTotalSeconds;
                         document.getElementById('remoteSintaksName').textContent = data.sintaksName || 'TIMER';
                     } else {
-                        // Jika room terhapus dari laptop (refresh/close), kembalikan remote ke menu awal
                         alert('Koneksi terputus! Laptop me-refresh atau menutup halaman.');
                         location.reload();
                     }
