@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remote Control UKIN</title>
+    <style>
+        * { box-sizing: border-box; margin:0; padding:0; }
+        body { font-family: sans-serif; background:#111; color:#fff; padding:16px; text-align:center; }
+        h2 { margin-bottom: 12px; font-size: 1.2rem; }
+        textarea { width: 100%; height: 70px; background:#222; color:#fff; border: 1px solid #444; border-radius:6px; padding:8px; font-size:0.75rem; margin-bottom:10px; }
+        .btn-action { padding: 14px; font-size: 1rem; font-weight: bold; border-radius: 8px; border: none; background: #333; color: #fff; cursor: pointer; }
+        .btn-action:active { background: #555; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .btn-main { grid-column: span 2; background: #007bff; font-size: 1.3rem; padding: 20px; }
+        .btn-reset { background: #dc3545; }
+        .status { margin-bottom: 10px; font-weight: bold; font-size: 0.9rem; color: #ff4444; }
+        .status.connected { color: #28a745; }
+    </style>
+</head>
+<body>
+    <h2>REMOTE TIMER UKIN</h2>
+    <div class="status" id="remoteStatus">OFFLINE</div>
+
+    <div id="setupBox">
+        <textarea id="remoteOfferInput" placeholder="1. Paste Offer Token dari Laptop..."></textarea>
+        <button class="btn-action" style="width:100%; background:#28a745;" onclick="generateAnswer()">2. Buat Jawaban (Answer)</button>
+        <textarea id="remoteAnswerOutput" readonly placeholder="3. Salin ini & tempel ke Laptop..." style="margin-top:10px;"></textarea>
+    </div>
+
+    <div class="grid" id="controlsBox" style="display:none;">
+        <button class="btn-action btn-main" onclick="sendCmd('TOGGLE')">PLAY / PAUSE</button>
+        <button class="btn-action" onclick="sendCmd('-10')">-10s</button>
+        <button class="btn-action" onclick="sendCmd('+10')">+10s</button>
+        <button class="btn-action" onclick="sendCmd('-5')">-5s</button>
+        <button class="btn-action" onclick="sendCmd('+5')">+5s</button>
+        <button class="btn-action" onclick="sendCmd('PREV')">‹ Sintaks Lalu</button>
+        <button class="btn-action" onclick="sendCmd('NEXT')">Sintaks Next ›</button>
+        <button class="btn-action btn-reset" style="grid-column: span 2;" onclick="sendCmd('RESET')">RESET</button>
+    </div>
+
+    <script>
+        let remotePeer, remoteChannel;
+
+        function generateAnswer() {
+            const offerStr = document.getElementById('remoteOfferInput').value;
+            if(!offerStr) return;
+
+            remotePeer = new RTCPeerConnection();
+
+            remotePeer.ondatachannel = (e) => {
+                remoteChannel = e.channel;
+                remoteChannel.onopen = () => {
+                    document.getElementById('remoteStatus').textContent = 'TERHUBUNG (READY)';
+                    document.getElementById('remoteStatus').className = 'status connected';
+                    document.getElementById('setupBox').style.display = 'none';
+                    document.getElementById('controlsBox').style.display = 'grid';
+                };
+            };
+
+            remotePeer.onicecandidate = (e) => {
+                if(!e.candidate) {
+                    document.getElementById('remoteAnswerOutput').value = btoa(JSON.stringify(remotePeer.localDescription));
+                }
+            };
+
+            const offerDesc = JSON.parse(atob(offerStr));
+            remotePeer.setRemoteDescription(offerDesc)
+                .then(() => remotePeer.createAnswer())
+                .then(a => remotePeer.setLocalDescription(a));
+        }
+
+        function sendCmd(cmd) {
+            if(remoteChannel && remoteChannel.readyState === 'open') {
+                remoteChannel.send(cmd);
+            }
+        }
+    </script>
+</body>
+</html>
