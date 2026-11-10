@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Timer Sukses Ukin</title>
-    <!-- Library QR Code Generator -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Library MQTT over WebSockets -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -287,7 +287,7 @@
             margin-bottom: 4px;
         }
 
-        input[type="number"], input[type="text"], textarea {
+        input[type="number"], input[type="text"] {
             padding: 8px;
             font-size: 0.95rem;
             font-weight: 600;
@@ -342,16 +342,22 @@
             font-size: 0.95rem;
         }
 
-        /* Status WebRTC Peer: INDIKATOR TITIK SAJA */
-        .peer-status-dot {
+        /* INDIKATOR TITIK POJOK KIRI ATAS & BADGE PIN */
+        .peer-status-box {
             position: absolute;
             top: 2vh;
             left: 2vw;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 50;
+        }
+
+        .peer-status-dot {
             width: 12px;
             height: 12px;
             border-radius: 50%;
             background-color: #ff4444;
-            z-index: 50;
             box-shadow: 0 0 6px rgba(0,0,0,0.2);
             transition: background-color 0.3s ease;
         }
@@ -360,20 +366,24 @@
             background-color: #28a745;
         }
 
-        #qrcodeContainer {
-            display: flex;
-            justify-content: center;
-            margin: 16px 0;
-            background: #fff;
-            padding: 12px;
-            border-radius: 8px;
+        .pin-badge {
+            font-weight: 900;
+            font-size: 0.85rem;
+            background: rgba(0,0,0,0.06);
+            padding: 3px 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            letter-spacing: 1px;
         }
     </style>
 </head>
 <body>
 
-    <!-- Indikator Titik Pojok Kiri Atas (Tanpa Teks) -->
-    <div class="peer-status-dot" id="statusDot" title="Status Remote"></div>
+    <!-- Indikator Titik & PIN 4 Angka di Pojok Kiri Atas -->
+    <div class="peer-status-box">
+        <div class="peer-status-dot" id="statusDot" title="Status Remote"></div>
+        <div class="pin-badge" id="pinDisplay">PIN: ----</div>
+    </div>
 
     <button class="fullscreen-btn" id="fullscreenBtn" onclick="toggleFullscreen()" title="Layar Penuh (Tekan F)">
         <svg id="fullscreenIcon" viewBox="0 0 24 24">
@@ -403,10 +413,6 @@
         <button class="btn btn-outline" onclick="resetTimer()" title="Reset (Tekan R)">
             <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8zm-1 12H11V8h2v9z"/></svg>
         </button>
-        
-        <button class="btn btn-outline" onclick="openRemoteModal()" title="Sambungkan HP Remote">
-            <svg viewBox="0 0 24 24"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
-        </button>
 
         <button class="btn btn-outline" onclick="openSettings()" title="Pengaturan (Tekan P)">
             <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .43-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.49-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
@@ -415,22 +421,6 @@
     
     <div class="countdown-overlay" id="countdownOverlay">
         <div class="countdown-number" id="countdownNumber">10</div>
-    </div>
-
-    <!-- Modal WebRTC Remote QR Code Connection -->
-    <div class="modal-overlay" id="remoteModalOverlay">
-        <div class="modal">
-            <button class="modal-close-btn" onclick="closeRemoteModal()">✕</button>
-            <h2 style="text-align:center;">Sambungkan HP Remote</h2>
-            
-            <p style="font-size:0.85rem; text-align:center;">1. Scan QR ini dari HP via <code>remote.html</code>:</p>
-            <div id="qrcodeContainer"></div>
-
-            <p style="font-size:0.85rem; margin-top:12px; margin-bottom:6px;">2. Scan Answer QR dari HP atau Tempel Kode Jawaban HP ke sini:</p>
-            <textarea id="answerToken" style="width:100%; height:60px; font-size:0.75rem;" placeholder="Paste kode dari HP..."></textarea>
-            
-            <button class="btn" style="background:#000; color:#fff; width:100%; margin-top:10px; padding:8px;" onclick="acceptRemoteAnswer()">Hubungkan HP</button>
-        </div>
     </div>
 
     <!-- Modal Pengaturan -->
@@ -515,7 +505,6 @@
         const sintaksTitleEl = document.getElementById('sintaksTitle');
         const startIconPathEl = document.getElementById('startIconPath');
         const modalOverlay = document.getElementById('modalOverlay');
-        const remoteModalOverlay = document.getElementById('remoteModalOverlay');
         const sectionTotal = document.getElementById('sectionTotal');
         const fullscreenIcon = document.getElementById('fullscreenIcon');
 
@@ -741,23 +730,13 @@
             modalOverlay.classList.remove('active');
         }
 
-        function openRemoteModal() {
-            initWebRTC();
-            remoteModalOverlay.classList.add('active');
-        }
-
-        function closeRemoteModal() {
-            remoteModalOverlay.classList.remove('active');
-        }
-
         document.addEventListener('keydown', (e) => {
             const activeElement = document.activeElement;
             const isInput = activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA';
 
-            if (modalOverlay.classList.contains('active') || remoteModalOverlay.classList.contains('active')) {
+            if (modalOverlay.classList.contains('active')) {
                 if (e.key === 'Escape') {
                     closeSettings();
-                    closeRemoteModal();
                 }
                 return;
             }
@@ -826,76 +805,39 @@
             resetTimer();
         }
 
-        /* LOGIKA WEBRTC RINGKAS & HIGH-DENSITY QR CODE */
-        let localPeer, dataChannel;
+        /* INTEGRASI MQTT BROKER PUBLIK DENGAN PIN 4 ANGKA */
+        const roomPin = Math.floor(1000 + Math.random() * 9000).toString();
+        document.getElementById('pinDisplay').textContent = "PIN: " + roomPin;
+        const topicName = "ukin_timer_room_" + roomPin;
 
-        function compressSDP(sdp) {
-            return sdp.sdp.split('\r\n')
-                .filter(line => !line.startsWith('a=extmap') && !line.startsWith('a=rtcp'))
-                .join('\n');
-        }
+        // Menggunakan public WebSocket MQTT broker gratis & zero-config
+        const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
 
-        function decompressSDP(compact, type) {
-            return { type: type, sdp: compact.split('\n').join('\r\n') };
-        }
+        client.on('connect', () => {
+            document.getElementById('statusDot').classList.add('connected');
+            client.subscribe(topicName);
+        });
 
-        function initWebRTC() {
-            localPeer = new RTCPeerConnection();
-            dataChannel = localPeer.createDataChannel("timerControl");
+        client.on('offline', () => {
+            document.getElementById('statusDot').classList.remove('connected');
+        });
 
-            dataChannel.onopen = () => {
-                document.getElementById('statusDot').classList.add('connected');
-                closeRemoteModal();
-            };
-
-            dataChannel.onclose = () => {
-                document.getElementById('statusDot').classList.remove('connected');
-            };
-
-            dataChannel.onmessage = (e) => {
-                const command = e.data;
-                if (command === 'TOGGLE') toggleTimer();
-                else if (command === 'RESET') resetTimer();
-                else if (command === '+10') adjustTime(10);
-                else if (command === '-10') adjustTime(-10);
-                else if (command === '+5') adjustTime(5);
-                else if (command === '-5') adjustTime(-5);
-                else if (command === 'NEXT') {
-                    if (currentIntervalIndex < intervals.length - 1) {
-                        currentIntervalIndex++;
-                        loadIntervalSintaks(currentIntervalIndex);
-                    }
-                } else if (command === 'PREV') {
-                    if (currentIntervalIndex > 0) {
-                        currentIntervalIndex--;
-                        loadIntervalSintaks(currentIntervalIndex);
-                    }
-                }
-            };
-
-            localPeer.onicecandidate = (e) => {
-                if (!e.candidate) {
-                    const compactToken = compressSDP(localPeer.localDescription);
-                    const qrContainer = document.getElementById('qrcodeContainer');
-                    qrContainer.innerHTML = '';
-                    new QRCode(qrContainer, {
-                        text: compactToken,
-                        width: 220,
-                        height: 220,
-                        correctLevel: QRCode.CorrectLevel.L
-                    });
-                }
-            };
-
-            localPeer.createOffer().then(o => localPeer.setLocalDescription(o));
-        }
-
-        function acceptRemoteAnswer() {
-            const answerStr = document.getElementById('answerToken').value;
-            if (!answerStr) return;
-            const fullDesc = decompressSDP(answerStr.trim(), 'answer');
-            localPeer.setRemoteDescription(fullDesc);
-        }
+        client.on('message', (topic, message) => {
+            const command = message.toString();
+            if (command === 'TOGGLE') toggleTimer();
+            else if (command === 'RESET') resetTimer();
+            else if (command === '+10') adjustTime(10);
+            else if (command === '-10') adjustTime(-10);
+            else if (command === '+5') adjustTime(5);
+            else if (command === '-5') adjustTime(-5);
+            else if (command === 'NEXT' && currentIntervalIndex < intervals.length - 1) {
+                currentIntervalIndex++;
+                loadIntervalSintaks(currentIntervalIndex);
+            } else if (command === 'PREV' && currentIntervalIndex > 0) {
+                currentIntervalIndex--;
+                loadIntervalSintaks(currentIntervalIndex);
+            }
+        });
 
         resetTimer();
     </script>

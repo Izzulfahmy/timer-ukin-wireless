@@ -4,134 +4,69 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Remote Control UKIN</title>
-    <!-- Library QR Generator & Camera Scanner -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <!-- Library MQTT over WebSockets -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
     <style>
         * { box-sizing: border-box; margin:0; padding:0; }
-        body { font-family: sans-serif; background:#111; color:#fff; padding:16px; text-align:center; }
-        h2 { margin-bottom: 12px; font-size: 1.2rem; }
-        textarea { width: 100%; height: 70px; background:#222; color:#fff; border: 1px solid #444; border-radius:6px; padding:8px; font-size:0.75rem; margin-bottom:10px; }
-        .btn-action { padding: 14px; font-size: 1rem; font-weight: bold; border-radius: 8px; border: none; background: #333; color: #fff; cursor: pointer; }
-        .btn-action:active { background: #555; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .btn-main { grid-column: span 2; background: #007bff; font-size: 1.3rem; padding: 20px; }
-        .btn-reset { background: #dc3545; }
-        .status { margin-bottom: 10px; font-weight: bold; font-size: 0.9rem; color: #ff4444; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background:#111; color:#fff; padding:20px; text-align:center; }
+        h2 { margin-bottom: 16px; font-size: 1.3rem; }
+        .input-pin { width: 100%; padding: 14px; font-size: 1.6rem; text-align: center; border-radius: 8px; border: 2px solid #444; background: #222; color: #fff; margin-bottom: 12px; font-weight: bold; letter-spacing: 6px; }
+        .btn-action { padding: 16px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; border: none; background: #007bff; color: #fff; cursor: pointer; width: 100%; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .btn-main { grid-column: span 2; background: #28a745; font-size: 1.4rem; padding: 22px; }
+        .btn-reset { background: #dc3545; grid-column: span 2; }
+        .status { margin-bottom: 12px; font-weight: bold; font-size: 0.9rem; color: #ff4444; }
         .status.connected { color: #28a745; }
-        #reader { width: 100%; margin-bottom: 10px; border-radius: 8px; overflow: hidden; background:#000; }
-        #qrOutputContainer { display: flex; justify-content: center; margin-top: 10px; background:#fff; padding:10px; border-radius:8px; }
-        .error-msg { background: #721c24; color: #f8d7da; padding: 8px; border-radius: 6px; font-size: 0.8rem; margin-bottom: 10px; display: none; }
     </style>
 </head>
 <body>
     <h2>REMOTE TIMER UKIN</h2>
     <div class="status" id="remoteStatus">OFFLINE</div>
 
-    <div id="setupBox">
-        <button class="btn-action" id="btnScan" style="width:100%; background:#28a745; margin-bottom:10px;" onclick="startScanner()">📷 SCAN QR LAPTOP</button>
-        <div class="error-msg" id="camError"></div>
-        <div id="reader"></div>
-
-        <textarea id="remoteOfferInput" placeholder="Atau Tempel Kode Offer Laptop di sini..."></textarea>
-        <button class="btn-action" style="width:100%; background:#007bff;" onclick="generateAnswer()">Buat Jawaban (Answer)</button>
-        
-        <div id="qrOutputContainer" style="display:none;"></div>
-        <textarea id="remoteAnswerOutput" readonly placeholder="Salin kode ini dan tempel ke laptop..." style="margin-top:10px; display:none;"></textarea>
+    <div id="loginBox">
+        <input type="number" id="pinInput" class="input-pin" placeholder="PIN 4 ANGKA" maxlength="4">
+        <button class="btn-action" onclick="connectRemote()">HUBUNGKAN</button>
     </div>
 
     <div class="grid" id="controlsBox" style="display:none;">
         <button class="btn-action btn-main" onclick="sendCmd('TOGGLE')">PLAY / PAUSE</button>
-        <button class="btn-action" onclick="sendCmd('-10')">-10s</button>
-        <button class="btn-action" onclick="sendCmd('+10')">+10s</button>
-        <button class="btn-action" onclick="sendCmd('-5')">-5s</button>
-        <button class="btn-action" onclick="sendCmd('+5')">+5s</button>
-        <button class="btn-action" onclick="sendCmd('PREV')">‹ Sintaks Lalu</button>
-        <button class="btn-action" onclick="sendCmd('NEXT')">Sintaks Next ›</button>
-        <button class="btn-action btn-reset" style="grid-column: span 2;" onclick="sendCmd('RESET')">RESET</button>
+        <button class="btn-action" style="background:#333;" onclick="sendCmd('-10')">-10s</button>
+        <button class="btn-action" style="background:#333;" onclick="sendCmd('+10')">+10s</button>
+        <button class="btn-action" style="background:#333;" onclick="sendCmd('-5')">-5s</button>
+        <button class="btn-action" style="background:#333;" onclick="sendCmd('+5')">+5s</button>
+        <button class="btn-action" style="background:#444;" onclick="sendCmd('PREV')">‹ Sintaks Lalu</button>
+        <button class="btn-action" style="background:#444;" onclick="sendCmd('NEXT')">Sintaks Next ›</button>
+        <button class="btn-action btn-reset" onclick="sendCmd('RESET')">RESET</button>
     </div>
 
     <script>
-        let remotePeer, remoteChannel, html5QrCode;
+        let client;
+        let activeTopic = '';
 
-        function compressSDP(sdp) {
-            return sdp.sdp.split('\r\n')
-                .filter(line => !line.startsWith('a=extmap') && !line.startsWith('a=rtcp'))
-                .join('\n');
-        }
+        function connectRemote() {
+            const pin = document.getElementById('pinInput').value;
+            if(pin.length === 4) {
+                activeTopic = "ukin_timer_room_" + pin;
+                client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
 
-        function decompressSDP(compact, type) {
-            return { type: type, sdp: compact.split('\n').join('\r\n') };
-        }
-
-        function startScanner() {
-            const errBox = document.getElementById('camError');
-            errBox.style.display = 'none';
-
-            html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start(
-                { facingMode: "environment" },
-                { fps: 15, qrbox: { width: 230, height: 230 } },
-                (decodedText) => {
-                    document.getElementById('remoteOfferInput').value = decodedText;
-                    html5QrCode.stop();
-                    document.getElementById('reader').style.display = 'none';
-                    generateAnswer();
-                },
-                (errorMessage) => {}
-            ).catch(err => {
-                errBox.style.display = 'block';
-                errBox.innerHTML = 'Kamera gagal diakses. Pastikan halaman diakses via HTTPS (GitHub Pages) dan izin kamera aktif.';
-            });
-        }
-
-        function generateAnswer() {
-            const offerStr = document.getElementById('remoteOfferInput').value;
-            if(!offerStr) return;
-
-            remotePeer = new RTCPeerConnection();
-
-            remotePeer.ondatachannel = (e) => {
-                remoteChannel = e.channel;
-                remoteChannel.onopen = () => {
-                    document.getElementById('remoteStatus').textContent = 'TERHUBUNG (READY)';
+                client.on('connect', () => {
+                    document.getElementById('remoteStatus').textContent = 'TERHUBUNG (PIN: ' + pin + ')';
                     document.getElementById('remoteStatus').className = 'status connected';
-                    document.getElementById('setupBox').style.display = 'none';
+                    document.getElementById('loginBox').style.display = 'none';
                     document.getElementById('controlsBox').style.display = 'grid';
-                };
-            };
+                });
 
-            remotePeer.onicecandidate = (e) => {
-                if(!e.candidate) {
-                    const compactAns = compressSDP(remotePeer.localDescription);
-                    document.getElementById('remoteAnswerOutput').value = compactAns;
-                    document.getElementById('remoteAnswerOutput').style.display = 'block';
-                    
-                    const qrBox = document.getElementById('qrOutputContainer');
-                    qrBox.style.display = 'flex';
-                    qrBox.innerHTML = '';
-                    new QRCode(qrBox, {
-                        text: compactAns,
-                        width: 200,
-                        height: 200,
-                        correctLevel: QRCode.CorrectLevel.L
-                    });
-                }
-            };
-
-            try {
-                const fullOffer = decompressSDP(offerStr.trim(), 'offer');
-                remotePeer.setRemoteDescription(fullOffer)
-                    .then(() => remotePeer.createAnswer())
-                    .then(a => remotePeer.setLocalDescription(a));
-            } catch(e) {
-                alert('Kode Offer tidak valid!');
+                client.on('error', () => {
+                    alert('Gagal terhubung ke server!');
+                });
+            } else {
+                alert('Masukkan 4 Angka PIN yang tertera di layar laptop!');
             }
         }
 
         function sendCmd(cmd) {
-            if(remoteChannel && remoteChannel.readyState === 'open') {
-                remoteChannel.send(cmd);
+            if(client && client.connected) {
+                client.publish(activeTopic, cmd);
             }
         }
     </script>
