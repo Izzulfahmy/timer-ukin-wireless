@@ -115,7 +115,7 @@
     <!-- FIREBASE SDK v10 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCVeFH7BlVTiS93w4LSLIgDF6KtJzx3xvk",
@@ -150,13 +150,34 @@
             return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
         }
 
-        function connectRemote() {
-            const pin = document.getElementById('pinInput').value;
-            if (pin.length === 4) {
-                activePin = pin;
-                sessionRef = ref(db, 'sessions/' + activePin);
-                cmdRef = ref(db, 'sessions/' + activePin + '/command');
+        async function connectRemote() {
+            const pinInput = document.getElementById('pinInput');
+            const pin = pinInput.value.trim();
+            
+            if (pin.length !== 4) {
+                alert('Masukkan 4 angka kode yang tertera di laptop!');
+                return;
+            }
 
+            activePin = pin;
+            sessionRef = ref(db, 'sessions/' + activePin);
+            cmdRef = ref(db, 'sessions/' + activePin + '/command');
+
+            const btn = document.getElementById('btnConnect');
+            btn.textContent = "MENGHUBUNGKAN...";
+            btn.disabled = true;
+
+            try {
+                // Cek ketersediaan sesi di Firebase
+                const snap = await get(sessionRef);
+                if (!snap.exists()) {
+                    alert('Kode PIN ' + pin + ' tidak ditemukan! Pastikan index.html di laptop sudah terbuka.');
+                    btn.textContent = "HUBUNGKAN";
+                    btn.disabled = false;
+                    return;
+                }
+
+                // Berhasil terhubung, daftarkan listener realtime
                 onValue(sessionRef, (snapshot) => {
                     const data = snapshot.val();
                     if (data) {
@@ -177,8 +198,10 @@
                 });
 
                 startHighPrecisionTicker();
-            } else {
-                alert('Masukkan 4 Angka PIN yang tertera di layar laptop!');
+            } catch (err) {
+                alert('Gagal terhubung: ' + err.message);
+                btn.textContent = "HUBUNGKAN";
+                btn.disabled = false;
             }
         }
 

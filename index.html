@@ -340,37 +340,20 @@
             font-size: 0.95rem;
         }
 
-        /* INDIKATOR TITIK & ANGKA KODE DI BAWAHNYA */
+        /* HANYA ANGKA KODE DI POJOK KIRI ATAS (TITIK DIHAPUS) */
         .peer-status-box {
             position: absolute;
             top: 2vh;
             left: 2vw;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 4px;
             z-index: 50;
-        }
-
-        .peer-status-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background-color: #ff4444;
-            box-shadow: 0 0 6px rgba(0,0,0,0.2);
-            transition: background-color 0.3s ease;
         }
 
         .pin-number-text {
             font-weight: 900;
-            font-size: 0.85rem;
+            font-size: 1.1rem;
             color: #ff4444;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
             transition: color 0.3s ease;
-        }
-
-        .peer-status-box.connected .peer-status-dot {
-            background-color: #28a745;
         }
 
         .peer-status-box.connected .pin-number-text {
@@ -380,8 +363,8 @@
 </head>
 <body>
 
+    <!-- Hanya Menampilkan Kode 4 Angka -->
     <div class="peer-status-box" id="statusBox">
-        <div class="peer-status-dot"></div>
         <div class="pin-number-text" id="pinDisplay">----</div>
     </div>
 
@@ -470,7 +453,7 @@
         </div>
     </div>
 
-    <!-- FIREBASE SDK v10 -->
+    <!-- FIREBASE SDK ES MODULES -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -839,7 +822,7 @@
             resetTimer();
         }
 
-        /* INTEGRASI REALTIME DATABASE FIREBASE */
+        /* INTEGRASI FIREBASE REALTIME DATABASE */
         const roomPin = Math.floor(1000 + Math.random() * 9000).toString();
         document.getElementById('pinDisplay').textContent = roomPin;
 
