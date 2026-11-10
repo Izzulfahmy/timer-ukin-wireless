@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Remote Control UKIN</title>
-    <!-- Library QR Code Generator & HTML5 Scanner -->
+    <!-- Library QR Generator & Camera Scanner -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         * { box-sizing: border-box; margin:0; padding:0; }
         body { font-family: sans-serif; background:#111; color:#fff; padding:16px; text-align:center; }
         h2 { margin-bottom: 12px; font-size: 1.2rem; }
-        textarea { width: 100%; height: 60px; background:#222; color:#fff; border: 1px solid #444; border-radius:6px; padding:8px; font-size:0.75rem; margin-bottom:10px; }
+        textarea { width: 100%; height: 70px; background:#222; color:#fff; border: 1px solid #444; border-radius:6px; padding:8px; font-size:0.75rem; margin-bottom:10px; }
         .btn-action { padding: 14px; font-size: 1rem; font-weight: bold; border-radius: 8px; border: none; background: #333; color: #fff; cursor: pointer; }
         .btn-action:active { background: #555; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
@@ -19,8 +19,9 @@
         .btn-reset { background: #dc3545; }
         .status { margin-bottom: 10px; font-weight: bold; font-size: 0.9rem; color: #ff4444; }
         .status.connected { color: #28a745; }
-        #reader { width: 100%; margin-bottom: 10px; border-radius: 8px; overflow: hidden; }
-        #qrOutputContainer { display: flex; justify-content: center; margin-top: 10px; }
+        #reader { width: 100%; margin-bottom: 10px; border-radius: 8px; overflow: hidden; background:#000; }
+        #qrOutputContainer { display: flex; justify-content: center; margin-top: 10px; background:#fff; padding:10px; border-radius:8px; }
+        .error-msg { background: #721c24; color: #f8d7da; padding: 8px; border-radius: 6px; font-size: 0.8rem; margin-bottom: 10px; display: none; }
     </style>
 </head>
 <body>
@@ -28,14 +29,15 @@
     <div class="status" id="remoteStatus">OFFLINE</div>
 
     <div id="setupBox">
-        <button class="btn-action" style="width:100%; background:#28a745; margin-bottom:10px;" onclick="startScanner()">📷 SCAN QR LAPTOP</button>
+        <button class="btn-action" id="btnScan" style="width:100%; background:#28a745; margin-bottom:10px;" onclick="startScanner()">📷 SCAN QR LAPTOP</button>
+        <div class="error-msg" id="camError"></div>
         <div id="reader"></div>
 
-        <textarea id="remoteOfferInput" placeholder="Atau Paste Offer Token dari Laptop..."></textarea>
+        <textarea id="remoteOfferInput" placeholder="Atau Tempel Kode Offer Laptop di sini..."></textarea>
         <button class="btn-action" style="width:100%; background:#007bff;" onclick="generateAnswer()">Buat Jawaban (Answer)</button>
         
-        <div id="qrOutputContainer"></div>
-        <textarea id="remoteAnswerOutput" readonly placeholder="Salin ini jika scan tidak aktif..." style="margin-top:10px; display:none;"></textarea>
+        <div id="qrOutputContainer" style="display:none;"></div>
+        <textarea id="remoteAnswerOutput" readonly placeholder="Salin kode ini dan tempel ke laptop..." style="margin-top:10px; display:none;"></textarea>
     </div>
 
     <div class="grid" id="controlsBox" style="display:none;">
@@ -52,11 +54,24 @@
     <script>
         let remotePeer, remoteChannel, html5QrCode;
 
+        function compressSDP(sdp) {
+            return sdp.sdp.split('\r\n')
+                .filter(line => !line.startsWith('a=extmap') && !line.startsWith('a=rtcp'))
+                .join('\n');
+        }
+
+        function decompressSDP(compact, type) {
+            return { type: type, sdp: compact.split('\n').join('\r\n') };
+        }
+
         function startScanner() {
+            const errBox = document.getElementById('camError');
+            errBox.style.display = 'none';
+
             html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start(
                 { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 200, height: 200 } },
+                { fps: 15, qrbox: { width: 230, height: 230 } },
                 (decodedText) => {
                     document.getElementById('remoteOfferInput').value = decodedText;
                     html5QrCode.stop();
@@ -64,7 +79,10 @@
                     generateAnswer();
                 },
                 (errorMessage) => {}
-            ).catch(err => console.log(err));
+            ).catch(err => {
+                errBox.style.display = 'block';
+                errBox.innerHTML = 'Kamera gagal diakses. Pastikan halaman diakses via HTTPS (GitHub Pages) dan izin kamera aktif.';
+            });
         }
 
         function generateAnswer() {
@@ -85,24 +103,30 @@
 
             remotePeer.onicecandidate = (e) => {
                 if(!e.candidate) {
-                    const ansStr = btoa(JSON.stringify(remotePeer.localDescription));
-                    document.getElementById('remoteAnswerOutput').value = ansStr;
+                    const compactAns = compressSDP(remotePeer.localDescription);
+                    document.getElementById('remoteAnswerOutput').value = compactAns;
                     document.getElementById('remoteAnswerOutput').style.display = 'block';
                     
                     const qrBox = document.getElementById('qrOutputContainer');
+                    qrBox.style.display = 'flex';
                     qrBox.innerHTML = '';
                     new QRCode(qrBox, {
-                        text: ansStr,
-                        width: 160,
-                        height: 160
+                        text: compactAns,
+                        width: 200,
+                        height: 200,
+                        correctLevel: QRCode.CorrectLevel.L
                     });
                 }
             };
 
-            const offerDesc = JSON.parse(atob(offerStr));
-            remotePeer.setRemoteDescription(offerDesc)
-                .then(() => remotePeer.createAnswer())
-                .then(a => remotePeer.setLocalDescription(a));
+            try {
+                const fullOffer = decompressSDP(offerStr.trim(), 'offer');
+                remotePeer.setRemoteDescription(fullOffer)
+                    .then(() => remotePeer.createAnswer())
+                    .then(a => remotePeer.setLocalDescription(a));
+            } catch(e) {
+                alert('Kode Offer tidak valid!');
+            }
         }
 
         function sendCmd(cmd) {
