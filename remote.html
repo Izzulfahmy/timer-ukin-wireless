@@ -22,7 +22,6 @@
         .status { margin-bottom: 12px; font-weight: bold; font-size: 0.9rem; color: #ff4444; }
         .status.connected { color: #28a745; }
 
-        /* KARTU MONITOR DISPLAY TIMER HP */
         .timer-monitor-box {
             background: #222;
             border: 2px solid #333;
@@ -87,7 +86,6 @@
     </div>
 
     <div id="controlsBox" style="display:none;">
-        <!-- DUAL TIMER & HITUNG MAJU (STOPWATCH) DISPLAY REMOTE -->
         <div class="timer-monitor-box">
             <div class="sintaks-name-preview" id="remoteSintaksName">Sintaks: -</div>
             <div class="monitor-row">
@@ -118,17 +116,17 @@
 
     <script>
         let client;
+        let localBC = null;
         let cmdTopic = '';
         let syncTopic = '';
 
         let remoteTargetInterval = null;
         let remoteTargetTotal = null;
+        let remoteStartTimestamp = null;
+        let remoteAccumulatedTime = 0;
         let remoteIsRunning = false;
         let remoteTotalSec = 0;
         let remoteGrandSec = 0;
-
-        let countUpSeconds = 0;
-        let countUpTimer = null;
 
         function formatTime(s) {
             if (s < 0) s = 0;
@@ -138,13 +136,27 @@
             return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
         }
 
+        function applySyncData(data) {
+            remoteTargetInterval = data.targetEndTimeInterval;
+            remoteTargetTotal = data.targetEndTimeGrandTotal;
+            remoteStartTimestamp = data.timerStartTimestamp;
+            remoteAccumulatedTime = data.elapsedTimeAccumulated || 0;
+            remoteIsRunning = data.isRunning;
+            remoteTotalSec = data.totalSeconds;
+            remoteGrandSec = data.grandTotalSeconds;
+            document.getElementById('remoteSintaksName').textContent = data.sintaksName;
+        }
+
         function connectRemote() {
             const pin = document.getElementById('pinInput').value;
             if(pin.length === 4) {
                 cmdTopic = "ukin_timer_cmd_" + pin;
                 syncTopic = "ukin_timer_sync_" + pin;
 
-                // Menggunakan WebSockets Secure (Port 8084) agar 100% tembus Hotspot HP
+                // BroadcastChannel lokal untuk koneksi 0 delay jika di browser/device sama
+                localBC = new BroadcastChannel('ukin_channel_' + pin);
+                localBC.onmessage = (e) => applySyncData(e.data);
+
                 client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
 
                 client.on('connect', () => {
@@ -154,19 +166,13 @@
                     document.getElementById('controlsBox').style.display = 'block';
 
                     client.subscribe(syncTopic);
-                    startLocalRemoteTicker();
+                    startHighPrecisionTicker();
                 });
 
                 client.on('message', (topic, message) => {
                     if (topic === syncTopic) {
                         try {
-                            const data = JSON.parse(message.toString());
-                            remoteTargetInterval = data.targetEndTimeInterval;
-                            remoteTargetTotal = data.targetEndTimeGrandTotal;
-                            remoteIsRunning = data.isRunning;
-                            remoteTotalSec = data.totalSeconds;
-                            remoteGrandSec = data.grandTotalSeconds;
-                            document.getElementById('remoteSintaksName').textContent = data.sintaksName;
+                            applySyncData(JSON.parse(message.toString()));
                         } catch(e) {}
                     }
                 });
@@ -179,34 +185,29 @@
             }
         }
 
-        function startLocalRemoteTicker() {
+        function startHighPrecisionTicker() {
+            // Ticker 100ms berbasis selisih timestamp asli (tanpa drift)
             setInterval(() => {
+                const now = Date.now();
                 if (remoteIsRunning && remoteTargetInterval && remoteTargetTotal) {
-                    const now = Date.now();
                     const intervalSec = Math.max(0, Math.ceil((remoteTargetInterval - now) / 1000));
                     const grandSec = Math.max(0, Math.ceil((remoteTargetTotal - now) / 1000));
+                    const countUpSec = Math.floor((now - remoteStartTimestamp) / 1000);
 
                     document.getElementById('remoteIntervalDisp').textContent = formatTime(intervalSec);
                     document.getElementById('remoteTotalDisp').textContent = formatTime(grandSec);
+                    document.getElementById('remoteCountUpDisp').textContent = formatTime(countUpSec);
                 } else {
                     document.getElementById('remoteIntervalDisp').textContent = formatTime(remoteTotalSec);
                     document.getElementById('remoteTotalDisp').textContent = formatTime(remoteGrandSec);
+                    document.getElementById('remoteCountUpDisp').textContent = formatTime(Math.floor(remoteAccumulatedTime / 1000));
                 }
             }, 100);
-
-            // Timer Hitung Maju (Stopwatch Count-Up) Tambahan di HP
-            setInterval(() => {
-                if (remoteIsRunning) {
-                    countUpSeconds++;
-                    document.getElementById('remoteCountUpDisp').textContent = formatTime(countUpSeconds);
-                }
-            }, 1000);
         }
 
         function sendCmd(cmd) {
-            if (cmd === 'RESET') {
-                countUpSeconds = 0;
-                document.getElementById('remoteCountUpDisp').textContent = formatTime(0);
+            if (localBC) {
+                localBC.postMessage(cmd);
             }
             if(client && client.connected) {
                 client.publish(cmdTopic, cmd);

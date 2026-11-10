@@ -342,7 +342,6 @@
             font-size: 0.95rem;
         }
 
-        /* STATUS POJOK KIRI ATAS: TITIK + KODE ANGKA DI BAWAHNYA */
         .peer-status-box {
             position: absolute;
             top: 2vh;
@@ -382,7 +381,6 @@
 </head>
 <body>
 
-    <!-- Indikator Titik & Kode PIN di Bawahnya -->
     <div class="peer-status-box" id="statusBox">
         <div class="peer-status-dot"></div>
         <div class="pin-number-text" id="pinDisplay">----</div>
@@ -486,6 +484,10 @@
         
         let remainingIntervalMs = 0;
         let remainingTotalMs = 0;
+
+        // TIMESTAMP GLOBAL UNTUK SINKRONISASI MILIDETIK
+        let timerStartTimestamp = null;
+        let elapsedTimeAccumulated = 0;
 
         let wakeLock = null; 
 
@@ -596,7 +598,12 @@
                 requestWakeLock();
 
                 const now = Date.now();
-                
+                if (!timerStartTimestamp) {
+                    timerStartTimestamp = now - elapsedTimeAccumulated;
+                } else {
+                    timerStartTimestamp = now - elapsedTimeAccumulated;
+                }
+
                 if (remainingIntervalMs > 0 || remainingTotalMs > 0) {
                     targetEndTimeInterval = now + remainingIntervalMs;
                     targetEndTimeGrandTotal = now + remainingTotalMs;
@@ -613,6 +620,7 @@
             if (!isRunning) return;
 
             const now = Date.now();
+            elapsedTimeAccumulated = now - timerStartTimestamp;
 
             totalSeconds = Math.ceil((targetEndTimeInterval - now) / 1000);
             grandTotalSeconds = Math.ceil((targetEndTimeGrandTotal - now) / 1000);
@@ -678,6 +686,7 @@
             const now = Date.now();
             remainingIntervalMs = targetEndTimeInterval - now;
             remainingTotalMs = targetEndTimeGrandTotal - now;
+            elapsedTimeAccumulated = now - timerStartTimestamp;
             broadcastStateToRemote();
         }
 
@@ -689,6 +698,8 @@
             
             remainingIntervalMs = 0;
             remainingTotalMs = 0;
+            timerStartTimestamp = null;
+            elapsedTimeAccumulated = 0;
             
             if (isIntervalMode) {
                 currentIntervalIndex = 0;
@@ -811,12 +822,16 @@
             resetTimer();
         }
 
-        /* INTEGRASI MQTT VIA WSS & BROADCAST PRESISI KE REMOTE */
+        /* INTEGRASI BROACASTCHANNEL & MQTT PRESISI MILIDETIK */
         const roomPin = Math.floor(1000 + Math.random() * 9000).toString();
         document.getElementById('pinDisplay').textContent = roomPin;
 
         const cmdTopic = "ukin_timer_cmd_" + roomPin;
         const syncTopic = "ukin_timer_sync_" + roomPin;
+
+        // BroadcastChannel lokal untuk latensi 0ms di browser/hotspot lokal
+        const localBC = new BroadcastChannel('ukin_channel_' + roomPin);
+        localBC.onmessage = (e) => handleRemoteCommand(e.data);
 
         const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
 
@@ -831,21 +846,25 @@
         });
 
         function broadcastStateToRemote() {
+            const payloadData = {
+                targetEndTimeInterval,
+                targetEndTimeGrandTotal,
+                timerStartTimestamp,
+                elapsedTimeAccumulated,
+                isRunning,
+                totalSeconds,
+                grandTotalSeconds,
+                sintaksName: intervals[currentIntervalIndex] ? intervals[currentIntervalIndex].name : 'TIMER'
+            };
+
+            // Kirim via lokal BC (0ms) & WSS MQTT
+            localBC.postMessage(payloadData);
             if (client && client.connected) {
-                const payload = JSON.stringify({
-                    targetEndTimeInterval,
-                    targetEndTimeGrandTotal,
-                    isRunning,
-                    totalSeconds,
-                    grandTotalSeconds,
-                    sintaksName: intervals[currentIntervalIndex] ? intervals[currentIntervalIndex].name : 'TIMER'
-                });
-                client.publish(syncTopic, payload, { retain: true });
+                client.publish(syncTopic, JSON.stringify(payloadData), { retain: true });
             }
         }
 
-        client.on('message', (topic, message) => {
-            const command = message.toString();
+        function handleRemoteCommand(command) {
             if (command === 'TOGGLE') toggleTimer();
             else if (command === 'RESET') resetTimer();
             else if (command === '+10') adjustTime(10);
@@ -859,6 +878,10 @@
                 currentIntervalIndex--;
                 loadIntervalSintaks(currentIntervalIndex);
             }
+        }
+
+        client.on('message', (topic, message) => {
+            handleRemoteCommand(message.toString());
         });
 
         resetTimer();
