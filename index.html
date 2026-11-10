@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer Sukses Ukin</title>
+    <!-- Library QR Code Ringan (Offline Support jika tersimpan di Cache Browser) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+            background-color: #ffffff;
+            position: relative;
+        }
+
+        .fullscreen-btn {
+            position: absolute;
+            top: 2vh;
+            right: 2vw;
+            width: 32px;
+            height: 32px;
+            background: transparent;
+            border: 2px solid #000000;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50; 
+            opacity: 0.15;
+            transition: all 0.3s ease;
+        }
+
+        .fullscreen-btn:hover {
+            opacity: 1;
+            background-color: #000000;
+        }
+
+        .fullscreen-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: #000000;
+            transition: fill 0.3s ease;
+        }
+
+        .fullscreen-btn:hover svg {
+            fill: #ffffff;
+        }
+
+        .section-interval {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 2.2;
+            width: 100%;
+            background-color: #ffffff;
+            color: #000000;
+            padding: 1vh 2vw;
+        }
+
+        .sintaks-title {
+            font-size: 6.5vw;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            text-align: center;
+            color: #000000;
+            margin-bottom: 0.5vh;
+            line-height: 1.05;
+            width: 95%;
+            word-wrap: break-word;
+        }
+
+        .section-total {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1.1;
+            width: 100%;
+            background-color: #000000;
+            color: #ffffff;
+            border-top: 4px solid #000000;
+        }
+
+        #display {
+            font-size: 16vw;
+            font-weight: 900;
+            line-height: 0.95;
+            letter-spacing: -0.04em;
+            font-variant-numeric: tabular-nums;
+            text-align: center;
+            width: 100%;
+        }
+
+        #totalDisplay {
+            font-size: 13vw;
+            font-weight: 900;
+            line-height: 0.95;
+            letter-spacing: -0.04em;
+            font-variant-numeric: tabular-nums;
+            text-align: center;
+            width: 100%;
+        }
+
+        .floating-controls {
+            position: absolute;
+            bottom: 1.5vh;
+            right: 2vw;
+            display: flex;
+            gap: 6px;
+            z-index: 50; 
+            opacity: 0.2;
+            transition: opacity 0.3s ease;
+        }
+
+        .floating-controls:hover {
+            opacity: 1;
+        }
+
+        .btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #ffffff;
+            background-color: #ffffff;
+            color: #000000;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: #ffffff;
+            border-color: #ffffff;
+        }
+
+        .btn:hover {
+            background-color: #dddddd;
+            color: #000000;
+        }
+
+        .btn-outline:hover {
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        .btn svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        .btn-text {
+            font-size: 0.8rem;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .countdown-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.85); 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 40;
+            opacity: 0;
+            pointer-events: none; 
+            transition: opacity 0.2s ease;
+        }
+        .countdown-overlay.active {
+            opacity: 1;
+        }
+        
+        .countdown-number {
+            font-size: 50vw;
+            font-weight: 900;
+            color: #ffffff;
+            line-height: 1;
+            text-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        }
+
+        .countdown-number.banner-selesai {
+            font-size: 10vw;
+            text-align: center;
+            color: #ff4444; 
+            letter-spacing: 0.02em;
+            text-shadow: 0 5px 20px rgba(0,0,0,0.9);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            position: relative;
+            background: #ffffff;
+            color: #000000;
+            border: 3px solid #000000;
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 540px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 32px;
+            height: 32px;
+            background: transparent;
+            border: 2px solid #000000;
+            border-radius: 6px;
+            font-size: 1.2rem;
+            font-weight: 800;
+            line-height: 1;
+            color: #000000;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal h2 {
+            font-size: 1.4rem;
+            margin-bottom: 16px;
+            border-bottom: 2px solid #000000;
+            padding-bottom: 6px;
+            padding-right: 36px;
+        }
+
+        .input-group-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .input-field {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .input-field label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        input[type="number"], input[type="text"], textarea {
+            padding: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border: 2px solid #000000;
+            border-radius: 6px;
+            outline: none;
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .interval-list {
+            margin-top: 12px;
+            margin-bottom: 16px;
+        }
+
+        .interval-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 8px;
+            background: #f8f8f8;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+
+        .interval-item input[type="text"] {
+            flex: 2;
+        }
+
+        .interval-item input[type="number"] {
+            width: 50px;
+        }
+
+        .btn-del {
+            background: #000000;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        /* Status WebRTC Peer */
+        .peer-status {
+            position: absolute;
+            top: 2vh;
+            left: 2vw;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            z-index: 50;
+            background: rgba(0,0,0,0.05);
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #ff4444;
+        }
+        .status-dot.connected {
+            background-color: #28a745;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Indicator Remote Status -->
+    <div class="peer-status">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Remote Offline</span>
+    </div>
+
+    <button class="fullscreen-btn" id="fullscreenBtn" onclick="toggleFullscreen()" title="Layar Penuh (Tekan F)">
+        <svg id="fullscreenIcon" viewBox="0 0 24 24">
+            <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+        </svg>
+    </button>
+
+    <div class="section-interval">
+        <div class="sintaks-title" id="sintaksTitle">Salam, lagu nasional, kehadiran, kerapihan, icebreaking, apersepsi, tujuan pembelajaran</div>
+        <div id="display">00:09:00</div>
+    </div>
+
+    <div class="section-total" id="sectionTotal">
+        <div id="totalDisplay">01:14:00</div>
+    </div>
+
+    <div class="floating-controls">
+        <button class="btn btn-outline" onclick="adjustTime(-10)" title="Kurangi 10 Detik"><span class="btn-text">-10</span></button>
+        <button class="btn btn-outline" onclick="adjustTime(-5)" title="Kurangi 5 Detik"><span class="btn-text">-5</span></button>
+        <button class="btn btn-outline" onclick="adjustTime(5)" title="Tambah 5 Detik"><span class="btn-text">+5</span></button>
+        <button class="btn btn-outline" onclick="adjustTime(10)" title="Tambah 10 Detik"><span class="btn-text">+10</span></button>
+        
+        <button class="btn" id="startBtn" onclick="toggleTimer()" title="Mulai / Jeda (Spasi)">
+            <svg viewBox="0 0 24 24"><path id="startIconPath" d="M8 5v14l11-7z"/></svg>
+        </button>
+        
+        <button class="btn btn-outline" onclick="resetTimer()" title="Reset (Tekan R)">
+            <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8zm-1 12H11V8h2v9z"/></svg>
+        </button>
+        
+        <!-- Tombol Tambahan untuk Hubungkan Remote WebRTC -->
+        <button class="btn btn-outline" onclick="openRemoteModal()" title="Sambungkan HP Remote">
+            <svg viewBox="0 0 24 24"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
+        </button>
+
+        <button class="btn btn-outline" onclick="openSettings()" title="Pengaturan (Tekan P)">
+            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .43-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.49-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        </button>
+    </div>
+    
+    <div class="countdown-overlay" id="countdownOverlay">
+        <div class="countdown-number" id="countdownNumber">10</div>
+    </div>
+
+    <!-- Modal WebRTC Remote Connection -->
+    <div class="modal-overlay" id="remoteModalOverlay">
+        <div class="modal">
+            <button class="modal-close-btn" onclick="closeRemoteModal()">✕</button>
+            <h2>Sambungkan HP Remote (Offline WebRTC)</h2>
+            
+            <p style="font-size:0.85rem; margin-bottom:10px;">1. Buka <code>remote.html</code> di HP Anda.<br>2. Tempelkan/Scan <strong>Offer Token</strong> ini ke HP:</p>
+            <textarea id="offerToken" style="width:100%; height:80px; font-size:0.75rem;" readonly onclick="this.select()"></textarea>
+
+            <p style="font-size:0.85rem; margin-top:12px; margin-bottom:6px;">3. Tempelkan <strong>Answer Token</strong> dari HP ke sini:</p>
+            <textarea id="answerToken" style="width:100%; height:80px; font-size:0.75rem;" placeholder="Paste kode jawaban dari HP di sini..."></textarea>
+            
+            <button class="btn" style="background:#000; color:#fff; width:100%; margin-top:10px; padding:8px;" onclick="acceptRemoteAnswer()">Hubungkan HP</button>
+        </div>
+    </div>
+
+    <!-- Modal Pengaturan -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <button class="modal-close-btn" onclick="closeSettings()" title="Tutup Pengaturan">✕</button>
+            <h2>Pengaturan Timer Ukin</h2>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="enableIntervals" onchange="toggleIntervalMode()" checked>
+                <label for="enableIntervals">Gunakan Sintaks / Interval Beruntun</label>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="showTotalTimer" onchange="toggleTotalTimerVisibility()" checked>
+                <label for="showTotalTimer">Tampilkan Waktu Keseluruhan di Bawah</label>
+            </div>
+
+            <div id="singleTimerSettings" style="display: none;">
+                <div class="input-group-row">
+                    <div class="input-field">
+                        <label>Jam</label>
+                        <input type="number" id="hours" min="0" max="99" value="01">
+                    </div>
+                    <div class="input-field">
+                        <label>Menit</label>
+                        <input type="number" id="minutes" min="0" max="59" value="15">
+                    </div>
+                    <div class="input-field">
+                        <label>Detik</label>
+                        <input type="number" id="seconds" min="0" max="59" value="00">
+                    </div>
+                </div>
+            </div>
+
+            <div id="intervalTimerSettings">
+                <label style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">Daftar Sintaks / Tahapan:</label>
+                <div class="interval-list" id="intervalContainer"></div>
+                <button class="btn btn-outline" style="background:#000; color:#fff; width: 100%; font-size: 0.85rem; padding: 6px; margin-bottom: 10px;" onclick="addIntervalItem()">
+                    <svg viewBox="0 0 24 24" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Tambah Sintaks
+                </button>
+            </div>
+
+            <div style="margin-top: 10px; display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="btn" style="background:#000; color:#fff; width:auto; padding: 8px 16px;" onclick="saveSettings()">Simpan & Terapkan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let countdown;
+        let isRunning = false;
+        let isIntervalMode = true;
+
+        let totalSeconds = 0;
+        let grandTotalSeconds = 0;
+
+        let targetEndTimeInterval = null;
+        let targetEndTimeGrandTotal = null;
+        
+        let remainingIntervalMs = 0;
+        let remainingTotalMs = 0;
+
+        let wakeLock = null; 
+
+        const playIconPath = "M8 5v14l11-7z";
+        const pauseIconPath = "M6 19h4V5H6v14zm8-14v14h4V5h-4z";
+
+        let intervals = [
+            { name: "Salam, lagu nasional, kehadiran, kerapihan, icebreaking, apersepsi, tujuan pembelajaran", h: 0, m: 9, s: 0 },
+            { name: "Sintak 1: Orientasi Murid pada Masalah", h: 0, m: 10, s: 0 },
+            { name: "Sintak 2: Mengorganisasi Murid untuk Belajar", h: 0, m: 5, s: 0 },
+            { name: "Sintak 3: Membimbing Penyelidikan Individu maupun Kelompok", h: 0, m: 15, s: 0 },
+            { name: "Sintak 4: Mengembangkan dan Menyajikan Hasil Karya", h: 0, m: 12, s: 0 },
+            { name: "Sintak 5: Menganalisis dan Evaluasi Proses Pemecahan Masalah", h: 0, m: 8, s: 0 },
+            { name: "Penguatan, refleksi, doa, salam penutup", h: 0, m: 10, s: 0 }
+        ];
+        let currentIntervalIndex = 0;
+
+        const displayEl = document.getElementById('display');
+        const totalDisplayEl = document.getElementById('totalDisplay');
+        const sintaksTitleEl = document.getElementById('sintaksTitle');
+        const startIconPathEl = document.getElementById('startIconPath');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const remoteModalOverlay = document.getElementById('remoteModalOverlay');
+        const sectionTotal = document.getElementById('sectionTotal');
+        const fullscreenIcon = document.getElementById('fullscreenIcon');
+
+        async function requestWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                } catch (err) {
+                    console.error('Wake Lock gagal:', err);
+                }
+            }
+        }
+
+        function releaseWakeLock() {
+            if (wakeLock !== null) {
+                wakeLock.release().then(() => {
+                    wakeLock = null;
+                });
+            }
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.log(err));
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            if (document.fullscreenElement) {
+                fullscreenIcon.innerHTML = `<path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>`;
+            } else {
+                fullscreenIcon.innerHTML = `<path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>`;
+            }
+        });
+
+        function formatTime(seconds) {
+            if (seconds < 0) seconds = 0;
+            const hrs = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function updateDisplay() {
+            displayEl.textContent = formatTime(Math.max(0, totalSeconds));
+            totalDisplayEl.textContent = formatTime(Math.max(0, grandTotalSeconds));
+            document.title = `${formatTime(Math.max(0, totalSeconds))} - Timer Sukses Ukin`;
+            
+            const overlay = document.getElementById('countdownOverlay');
+            const numEl = document.getElementById('countdownNumber');
+            
+            if (grandTotalSeconds <= 10 && grandTotalSeconds > 0) {
+                overlay.classList.add('active');
+                numEl.className = 'countdown-number';
+                numEl.textContent = grandTotalSeconds;
+            } else if (grandTotalSeconds <= 0) {
+                overlay.classList.add('active');
+                numEl.className = 'countdown-number banner-selesai';
+                numEl.innerHTML = 'PEMBELAJARAN<br>SELESAI';
+            } else {
+                overlay.classList.remove('active');
+            }
+        }
+
+        function toggleTimer() {
+            if (isRunning) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        }
+
+        function startTimer() {
+            if (!isRunning) {
+                if (totalSeconds <= 0 && grandTotalSeconds <= 0) return;
+
+                isRunning = true;
+                startIconPathEl.setAttribute('d', pauseIconPath); 
+
+                requestWakeLock();
+
+                const now = Date.now();
+                
+                if (remainingIntervalMs > 0 || remainingTotalMs > 0) {
+                    targetEndTimeInterval = now + remainingIntervalMs;
+                    targetEndTimeGrandTotal = now + remainingTotalMs;
+                } else {
+                    targetEndTimeInterval = now + (totalSeconds * 1000);
+                    targetEndTimeGrandTotal = now + (grandTotalSeconds * 1000);
+                }
+
+                countdown = setInterval(tick, 100);
+            }
+        }
+
+        function tick() {
+            if (!isRunning) return;
+
+            const now = Date.now();
+
+            totalSeconds = Math.ceil((targetEndTimeInterval - now) / 1000);
+            grandTotalSeconds = Math.ceil((targetEndTimeGrandTotal - now) / 1000);
+
+            if (isIntervalMode) {
+                while (totalSeconds <= 0 && currentIntervalIndex < intervals.length - 1) {
+                    currentIntervalIndex++;
+                    const item = intervals[currentIntervalIndex];
+                    const nextDuration = (item.h * 3600) + (item.m * 60) + item.s;
+                    
+                    targetEndTimeInterval += (nextDuration * 1000);
+                    sintaksTitleEl.textContent = item.name;
+                    
+                    totalSeconds = Math.ceil((targetEndTimeInterval - now) / 1000);
+                }
+            }
+
+            updateDisplay();
+
+            if (grandTotalSeconds <= 0 && totalSeconds <= 0) {
+                clearInterval(countdown);
+                isRunning = false;
+                startIconPathEl.setAttribute('d', playIconPath); 
+                releaseWakeLock(); 
+            }
+        }
+
+        function adjustTime(seconds) {
+            let wasRunning = isRunning;
+            
+            if (!isRunning) {
+                isRunning = true;
+                const now = Date.now();
+                if (remainingIntervalMs === 0 && remainingTotalMs === 0) {
+                    targetEndTimeInterval = now + (totalSeconds * 1000);
+                    targetEndTimeGrandTotal = now + (grandTotalSeconds * 1000);
+                } else {
+                    targetEndTimeInterval = now + remainingIntervalMs;
+                    targetEndTimeGrandTotal = now + remainingTotalMs;
+                }
+            }
+
+            targetEndTimeInterval += (seconds * 1000);
+            targetEndTimeGrandTotal += (seconds * 1000);
+            
+            tick();
+
+            if (!wasRunning) {
+                isRunning = false;
+                const now = Date.now();
+                remainingIntervalMs = targetEndTimeInterval - now;
+                remainingTotalMs = targetEndTimeGrandTotal - now;
+                updateDisplay();
+            }
+        }
+
+        function pauseTimer() {
+            clearInterval(countdown);
+            isRunning = false;
+            startIconPathEl.setAttribute('d', playIconPath); 
+            releaseWakeLock(); 
+            
+            const now = Date.now();
+            remainingIntervalMs = targetEndTimeInterval - now;
+            remainingTotalMs = targetEndTimeGrandTotal - now;
+        }
+
+        function resetTimer() {
+            clearInterval(countdown);
+            isRunning = false;
+            startIconPathEl.setAttribute('d', playIconPath); 
+            releaseWakeLock(); 
+            
+            remainingIntervalMs = 0;
+            remainingTotalMs = 0;
+            
+            if (isIntervalMode) {
+                currentIntervalIndex = 0;
+                calculateGrandTotalFromIntervals();
+                loadIntervalSintaks(currentIntervalIndex);
+            } else {
+                const h = parseInt(document.getElementById('hours').value) || 0;
+                const m = parseInt(document.getElementById('minutes').value) || 0;
+                const s = parseInt(document.getElementById('seconds').value) || 0;
+                totalSeconds = (h * 3600) + (m * 60) + s;
+                grandTotalSeconds = totalSeconds;
+                sintaksTitleEl.textContent = "TIMER UKIN";
+                updateDisplay();
+            }
+        }
+
+        function calculateGrandTotalFromIntervals() {
+            grandTotalSeconds = intervals.reduce((acc, item) => {
+                return acc + (item.h * 3600) + (item.m * 60) + item.s;
+            }, 0);
+        }
+
+        function loadIntervalSintaks(index) {
+            const item = intervals[index];
+            totalSeconds = (item.h * 3600) + (item.m * 60) + item.s;
+            sintaksTitleEl.textContent = item.name;
+            updateDisplay();
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && isRunning) {
+                requestWakeLock();
+            }
+            if (!document.hidden && isRunning) {
+                tick();
+            }
+        });
+
+        function openSettings() {
+            renderIntervalInputs();
+            modalOverlay.classList.add('active');
+        }
+
+        function closeSettings() {
+            modalOverlay.classList.remove('active');
+        }
+
+        function openRemoteModal() {
+            initWebRTC();
+            remoteModalOverlay.classList.add('active');
+        }
+
+        function closeRemoteModal() {
+            remoteModalOverlay.classList.remove('active');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            const activeElement = document.activeElement;
+            const isInput = activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA';
+
+            if (modalOverlay.classList.contains('active') || remoteModalOverlay.classList.contains('active')) {
+                if (e.key === 'Escape') {
+                    closeSettings();
+                    closeRemoteModal();
+                }
+                return;
+            }
+
+            if (isInput) return;
+
+            if (e.code === 'Space') {
+                e.preventDefault();
+                toggleTimer();
+            } else if (e.key.toLowerCase() === 'f') {
+                e.preventDefault();
+                toggleFullscreen();
+            } else if (e.key.toLowerCase() === 'r') {
+                e.preventDefault();
+                resetTimer();
+            } else if (e.key.toLowerCase() === 'p') {
+                e.preventDefault();
+                openSettings();
+            }
+        });
+
+        function toggleIntervalMode() {
+            const checked = document.getElementById('enableIntervals').checked;
+            document.getElementById('singleTimerSettings').style.display = checked ? 'none' : 'block';
+            document.getElementById('intervalTimerSettings').style.display = checked ? 'block' : 'none';
+        }
+
+        function toggleTotalTimerVisibility() {
+            const checked = document.getElementById('showTotalTimer').checked;
+            sectionTotal.style.display = checked ? 'flex' : 'none';
+        }
+
+        function renderIntervalInputs() {
+            const container = document.getElementById('intervalContainer');
+            container.innerHTML = '';
+            intervals.forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.className = 'interval-item';
+                div.innerHTML = `
+                    <input type="text" value="${item.name}" placeholder="Nama Sintaks" onchange="intervals[${idx}].name = this.value">
+                    <input type="number" value="${item.h}" min="0" placeholder="J" onchange="intervals[${idx}].h = parseInt(this.value)||0">
+                    <input type="number" value="${item.m}" min="0" max="59" placeholder="M" onchange="intervals[${idx}].m = parseInt(this.value)||0">
+                    <input type="number" value="${item.s}" min="0" max="59" placeholder="D" onchange="intervals[${idx}].s = parseInt(this.value)||0">
+                    <button class="btn-del" onclick="removeIntervalItem(${idx})">×</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function addIntervalItem() {
+            intervals.push({ name: `Sintaks ${intervals.length + 1}`, h: 0, m: 10, s: 0 });
+            renderIntervalInputs();
+        }
+
+        function removeIntervalItem(idx) {
+            if (intervals.length > 1) {
+                intervals.splice(idx, 1);
+                renderIntervalInputs();
+            }
+        }
+
+        function saveSettings() {
+            isIntervalMode = document.getElementById('enableIntervals').checked;
+            toggleTotalTimerVisibility();
+            closeSettings();
+            resetTimer();
+        }
+
+        /* LOGIKA WEBRTC PEER-TO-PEER (OFFLINE REMOTE) */
+        let localPeer, dataChannel;
+
+        function initWebRTC() {
+            localPeer = new RTCPeerConnection();
+            dataChannel = localPeer.createDataChannel("timerControl");
+
+            dataChannel.onopen = () => {
+                document.getElementById('statusDot').classList.add('connected');
+                document.getElementById('statusText').textContent = 'Remote Terhubung';
+                closeRemoteModal();
+            };
+
+            dataChannel.onclose = () => {
+                document.getElementById('statusDot').classList.remove('connected');
+                document.getElementById('statusText').textContent = 'Remote Offline';
+            };
+
+            dataChannel.onmessage = (e) => {
+                const command = e.data;
+                if (command === 'TOGGLE') toggleTimer();
+                else if (command === 'RESET') resetTimer();
+                else if (command === '+10') adjustTime(10);
+                else if (command === '-10') adjustTime(-10);
+                else if (command === '+5') adjustTime(5);
+                else if (command === '-5') adjustTime(-5);
+                else if (command === 'NEXT') {
+                    if (currentIntervalIndex < intervals.length - 1) {
+                        currentIntervalIndex++;
+                        loadIntervalSintaks(currentIntervalIndex);
+                    }
+                } else if (command === 'PREV') {
+                    if (currentIntervalIndex > 0) {
+                        currentIntervalIndex--;
+                        loadIntervalSintaks(currentIntervalIndex);
+                    }
+                }
+            };
+
+            localPeer.onicecandidate = (e) => {
+                if (!e.candidate) {
+                    document.getElementById('offerToken').value = btoa(JSON.stringify(localPeer.localDescription));
+                }
+            };
+
+            localPeer.createOffer().then(o => localPeer.setLocalDescription(o));
+        }
+
+        function acceptRemoteAnswer() {
+            const answerStr = document.getElementById('answerToken').value;
+            if (!answerStr) return;
+            const answerDesc = JSON.parse(atob(answerStr));
+            localPeer.setRemoteDescription(answerDesc);
+        }
+
+        resetTimer();
+    </script>
+</body>
+</html>
