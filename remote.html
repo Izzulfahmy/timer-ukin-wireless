@@ -2,87 +2,239 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Remote Control UKIN</title>
     <style>
         * { box-sizing: border-box; margin:0; padding:0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background:#111; color:#fff; padding:16px; text-align:center; }
-        h2 { margin-bottom: 12px; font-size: 1.2rem; }
-        
-        .input-pin { width: 100%; padding: 14px; font-size: 1.6rem; text-align: center; border-radius: 8px; border: 2px solid #444; background: #222; color: #fff; margin-bottom: 12px; font-weight: bold; letter-spacing: 6px; }
-        .btn-action { padding: 14px; font-size: 1rem; font-weight: bold; border-radius: 8px; border: none; background: #007bff; color: #fff; cursor: pointer; width: 100%; }
-        .btn-action:active { opacity: 0.8; }
-        
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
-        .btn-main { grid-column: span 2; font-size: 1.3rem; padding: 18px; }
-        .btn-main.is-play { background: #28a745; }
-        .btn-main.is-pause { background: #ffc107; color: #000; }
-        .btn-reset { background: #dc3545; grid-column: span 2; }
-        
-        .status { margin-bottom: 12px; font-weight: bold; font-size: 0.9rem; color: #ff4444; }
-        .status.connected { color: #28a745; }
+        html, body {
+            height: 100%;
+            height: 100dvh;
+            overflow: hidden;
+            background: #0d0f12;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
 
-        .timer-monitor-box {
-            background: #222;
-            border: 2px solid #333;
-            border-radius: 10px;
-            padding: 12px;
-            margin-bottom: 12px;
+        body {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            padding: 12px;
+            justify-content: space-between;
+        }
+
+        .header-title {
+            font-size: 0.95rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: #888;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .status-badge {
+            margin-top: 4px;
+            margin-bottom: 8px;
+            font-weight: 800;
+            font-size: 0.85rem;
+            color: #ff4444;
+            text-align: center;
+        }
+        .status-badge.connected { color: #28a745; }
+
+        /* LOGIN FORM */
+        #loginBox {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .input-pin {
+            width: 100%;
+            padding: 16px;
+            font-size: 1.8rem;
+            text-align: center;
+            border-radius: 10px;
+            border: 2px solid #333;
+            background: #181b20;
+            color: #fff;
+            font-weight: bold;
+            letter-spacing: 8px;
+            outline: none;
+        }
+
+        .btn-connect {
+            padding: 16px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            border-radius: 10px;
+            border: none;
+            background: #007bff;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        /* MONITOR BOX */
+        #controlsBox {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 10px;
+            height: 100%;
+        }
+
+        .timer-monitor-box {
+            background: #181b20;
+            border: 1px solid #2a2e35;
+            border-radius: 12px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .sintaks-name-preview {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: #ffc107;
+            text-align: left;
+            line-height: 1.3;
+            word-wrap: break-word;
+            word-break: break-word;
+            margin-bottom: 4px;
+            border-bottom: 1px dashed #333;
+            padding-bottom: 6px;
         }
 
         .monitor-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #333;
-            padding-bottom: 6px;
-        }
-
-        .monitor-row:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
         }
 
         .monitor-label {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 700;
-            color: #aaa;
+            color: #8a909a;
             text-transform: uppercase;
         }
 
         .monitor-val {
-            font-size: 1.4rem;
+            font-size: 1.35rem;
             font-weight: 900;
             font-variant-numeric: tabular-nums;
             color: #fff;
         }
 
-        .countup-val {
-            color: #00d2ff;
+        .countup-val { color: #00d2ff; }
+
+        /* GRID TOMBOL */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            flex: 1;
         }
 
-        .sintaks-name-preview {
-            font-size: 0.8rem;
+        .btn-action {
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
             font-weight: 800;
-            color: #ffc107;
-            text-align: left;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 90vw;
+            color: #fff;
+            background: #252930;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
+        .btn-action:active { opacity: 0.7; }
+
+        .btn-main {
+            grid-column: span 2;
+            font-size: 1.3rem;
+            letter-spacing: 1px;
+        }
+        .btn-main.is-play { background: #28a745; }
+        .btn-main.is-pause { background: #ffc107; color: #000; }
+        .btn-reset { background: #dc3545; grid-column: span 2; }
+
+        /* CUSTOM MODAL CONFIRMATION UI */
+        .confirm-modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .confirm-modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .confirm-card {
+            background: #1c2026;
+            border: 1px solid #333;
+            border-radius: 14px;
+            padding: 20px;
+            width: 85%;
+            max-width: 340px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .confirm-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .confirm-card p {
+            font-size: 0.9rem;
+            color: #aaa;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-modal {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 800;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
+        .btn-cancel { background: #333; color: #fff; }
+        .btn-ok { background: #007bff; color: #fff; }
     </style>
 </head>
 <body>
-    <h2>REMOTE TIMER UKIN</h2>
-    <div class="status" id="remoteStatus">OFFLINE</div>
+    <div>
+        <div class="header-title">REMOTE TIMER UKIN</div>
+        <div class="status-badge" id="remoteStatus">OFFLINE</div>
+    </div>
 
     <div id="loginBox">
         <input type="number" id="pinInput" class="input-pin" placeholder="PIN 4 ANGKA" maxlength="4">
-        <button class="btn-action" id="btnConnect">HUBUNGKAN</button>
+        <button class="btn-connect" id="btnConnect">HUBUNGKAN</button>
     </div>
 
     <div id="controlsBox" style="display:none;">
@@ -97,20 +249,32 @@
                 <span class="monitor-val" id="remoteTotalDisp">00:00:00</span>
             </div>
             <div class="monitor-row">
-                <span class="monitor-label">Hitung Maju (Count-up)</span>
+                <span class="monitor-label">Hitung Maju</span>
                 <span class="monitor-val countup-val" id="remoteCountUpDisp">00:00:00</span>
             </div>
         </div>
 
         <div class="grid">
             <button class="btn-action btn-main is-play" id="btnToggle" onclick="handleToggleCmd()">PLAY</button>
-            <button class="btn-action" style="background:#333;" onclick="sendCmd('-10', 'Kurangi 10 detik timer?')">-10s</button>
-            <button class="btn-action" style="background:#333;" onclick="sendCmd('+10', 'Tambah 10 detik timer?')">+10s</button>
-            <button class="btn-action" style="background:#333;" onclick="sendCmd('-5', 'Kurangi 5 detik timer?')">-5s</button>
-            <button class="btn-action" style="background:#333;" onclick="sendCmd('+5', 'Tambah 5 detik timer?')">+5s</button>
-            <button class="btn-action" style="background:#444;" onclick="sendCmd('PREV', 'Kembali ke sintaks sebelumnya?')">‹ Sintaks Lalu</button>
-            <button class="btn-action" style="background:#444;" onclick="sendCmd('NEXT', 'Lanjut ke sintaks berikutnya?')">Sintaks Next ›</button>
-            <button class="btn-action btn-reset" onclick="sendCmd('RESET', 'Yakin ingin mereset timer dari awal?')">RESET</button>
+            <button class="btn-action" onclick="askCmd('-10', 'Kurangi waktu sintaks & total sebanyak 10 detik?')">-10s</button>
+            <button class="btn-action" onclick="askCmd('+10', 'Tambah waktu sintaks & total sebanyak 10 detik?')">+10s</button>
+            <button class="btn-action" onclick="askCmd('-5', 'Kurangi waktu sintaks & total sebanyak 5 detik?')">-5s</button>
+            <button class="btn-action" onclick="askCmd('+5', 'Tambah waktu sintaks & total sebanyak 5 detik?')">+5s</button>
+            <button class="btn-action" onclick="askCmd('PREV', 'Kembali ke sintaks pembelajaran sebelumnya?')">‹ Sintaks Lalu</button>
+            <button class="btn-action" onclick="askCmd('NEXT', 'Lanjut ke sintaks pembelajaran berikutnya?')">Sintaks Next ›</button>
+            <button class="btn-action btn-reset" onclick="askCmd('RESET', 'Yakin ingin mereset seluruh timer dari awal?')">RESET</button>
+        </div>
+    </div>
+
+    <!-- UI MODAL KONFIRMASI CUSTOM -->
+    <div class="confirm-modal-overlay" id="confirmModal">
+        <div class="confirm-card">
+            <h3>Konfirmasi Aksi</h3>
+            <p id="confirmMsg">Apakah Anda yakin?</p>
+            <div class="confirm-actions">
+                <button class="btn-modal btn-cancel" onclick="closeConfirmModal()">Batal</button>
+                <button class="btn-modal btn-ok" id="btnConfirmOk">Ya, Lakukan</button>
+            </div>
         </div>
     </div>
 
@@ -143,6 +307,7 @@
         let remoteIsRunning = false;
         let remoteTotalSec = 0;
         let remoteGrandSec = 0;
+        let pendingAction = null;
 
         function formatTime(s) {
             if (s < 0) s = 0;
@@ -172,7 +337,7 @@
             try {
                 const snap = await get(stateRef);
                 if (!snap.exists()) {
-                    alert('PIN ' + pin + ' belum aktif! Silakan klik tombol ikon HP di laptop terlebih dahulu.');
+                    alert('PIN ' + pin + ' belum aktif! Silakan klik tombol PIN di laptop terlebih dahulu.');
                     btn.textContent = "HUBUNGKAN";
                     btn.disabled = false;
                     return;
@@ -182,9 +347,9 @@
                     const data = snapshot.val();
                     if (data) {
                         document.getElementById('remoteStatus').textContent = 'TERHUBUNG (' + activePin + ')';
-                        document.getElementById('remoteStatus').className = 'status connected';
+                        document.getElementById('remoteStatus').className = 'status-badge connected';
                         document.getElementById('loginBox').style.display = 'none';
-                        document.getElementById('controlsBox').style.display = 'block';
+                        document.getElementById('controlsBox').style.display = 'flex';
 
                         remoteTargetInterval = data.targetEndTimeInterval;
                         remoteTargetTotal = data.targetEndTimeGrandTotal;
@@ -233,25 +398,29 @@
                     document.getElementById('remoteTotalDisp').textContent = formatTime(remoteGrandSec);
                     document.getElementById('remoteCountUpDisp').textContent = formatTime(Math.floor(remoteAccumulatedTime / 1000));
                 }
-            }, 50); // Ticker presisi 50ms
+            }, 50);
         }
 
         function handleToggleCmd() {
             if (remoteIsRunning) {
-                // Jika sedang berjalan (PAUSE), minta konfirmasi
-                if (confirm('Jeda/Pause timer saat ini?')) {
-                    sendCmd('TOGGLE');
-                }
+                askCmd('TOGGLE', 'Jeda / Pause timer saat ini?');
             } else {
-                // Jika sedang berhenti (PLAY), langsung eksekusi tanpa konfirmasi
-                sendCmd('TOGGLE');
+                execCmd('TOGGLE');
             }
         }
 
-        function sendCmd(action, confirmMsg = null) {
-            if (confirmMsg && !confirm(confirmMsg)) {
-                return;
-            }
+        function askCmd(action, msg) {
+            pendingAction = action;
+            document.getElementById('confirmMsg').textContent = msg;
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        function closeConfirmModal() {
+            pendingAction = null;
+            document.getElementById('confirmModal').classList.remove('active');
+        }
+
+        function execCmd(action) {
             if (cmdRef) {
                 set(cmdRef, {
                     action: action,
@@ -260,8 +429,16 @@
             }
         }
 
+        document.getElementById('btnConfirmOk').addEventListener('click', () => {
+            if (pendingAction) {
+                execCmd(pendingAction);
+            }
+            closeConfirmModal();
+        });
+
         document.getElementById('btnConnect').addEventListener('click', connectRemote);
-        window.sendCmd = sendCmd;
+        window.askCmd = askCmd;
+        window.closeConfirmModal = closeConfirmModal;
         window.handleToggleCmd = handleToggleCmd;
     </script>
 </body>

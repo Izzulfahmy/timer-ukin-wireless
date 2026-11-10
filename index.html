@@ -340,7 +340,6 @@
             font-size: 0.95rem;
         }
 
-        /* TOMBOL BADGE PIN LEBIH KECIL & DI POJOK ATAS KIRI */
         .peer-status-box {
             position: absolute;
             top: 8px;
@@ -704,6 +703,32 @@
             }
         }
 
+        function switchSintaksTarget(newIndex) {
+            if (newIndex < 0 || newIndex >= intervals.length) return;
+            
+            currentIntervalIndex = newIndex;
+            
+            let remainingSum = 0;
+            for (let i = currentIntervalIndex; i < intervals.length; i++) {
+                remainingSum += (intervals[i].h * 3600) + (intervals[i].m * 60) + intervals[i].s;
+            }
+
+            const item = intervals[currentIntervalIndex];
+            const currentDuration = (item.h * 3600) + (item.m * 60) + item.s;
+
+            totalSeconds = currentDuration;
+            grandTotalSeconds = remainingSum;
+            sintaksTitleEl.textContent = item.name;
+
+            const now = Date.now();
+            targetEndTimeInterval = now + (totalSeconds * 1000);
+            targetEndTimeGrandTotal = now + (grandTotalSeconds * 1000);
+            remainingIntervalMs = totalSeconds * 1000;
+            remainingTotalMs = grandTotalSeconds * 1000;
+
+            updateDisplay();
+        }
+
         function pauseTimer() {
             clearInterval(countdown);
             isRunning = false;
@@ -859,7 +884,6 @@
 
             roomPin = Math.floor(1000 + Math.random() * 9000).toString();
             
-            // Ganti ikon HP menjadi teks PIN 4 angka
             document.getElementById('hpIconSvg').style.display = 'none';
             const pinTxt = document.getElementById('pinTextDisplay');
             pinTxt.textContent = roomPin;
@@ -884,11 +908,9 @@
                 else if (command.action === '+5') adjustTime(5);
                 else if (command.action === '-5') adjustTime(-5);
                 else if (command.action === 'NEXT' && currentIntervalIndex < intervals.length - 1) {
-                    currentIntervalIndex++;
-                    loadIntervalSintaks(currentIntervalIndex);
+                    switchSintaksTarget(currentIntervalIndex + 1);
                 } else if (command.action === 'PREV' && currentIntervalIndex > 0) {
-                    currentIntervalIndex--;
-                    loadIntervalSintaks(currentIntervalIndex);
+                    switchSintaksTarget(currentIntervalIndex - 1);
                 }
 
                 set(cmdRef, null);
