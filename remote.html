@@ -4,11 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Remote Control UKIN</title>
+    <!-- Library QR Code Generator & HTML5 Scanner -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         * { box-sizing: border-box; margin:0; padding:0; }
         body { font-family: sans-serif; background:#111; color:#fff; padding:16px; text-align:center; }
         h2 { margin-bottom: 12px; font-size: 1.2rem; }
-        textarea { width: 100%; height: 70px; background:#222; color:#fff; border: 1px solid #444; border-radius:6px; padding:8px; font-size:0.75rem; margin-bottom:10px; }
+        textarea { width: 100%; height: 60px; background:#222; color:#fff; border: 1px solid #444; border-radius:6px; padding:8px; font-size:0.75rem; margin-bottom:10px; }
         .btn-action { padding: 14px; font-size: 1rem; font-weight: bold; border-radius: 8px; border: none; background: #333; color: #fff; cursor: pointer; }
         .btn-action:active { background: #555; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
@@ -16,6 +19,8 @@
         .btn-reset { background: #dc3545; }
         .status { margin-bottom: 10px; font-weight: bold; font-size: 0.9rem; color: #ff4444; }
         .status.connected { color: #28a745; }
+        #reader { width: 100%; margin-bottom: 10px; border-radius: 8px; overflow: hidden; }
+        #qrOutputContainer { display: flex; justify-content: center; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -23,9 +28,14 @@
     <div class="status" id="remoteStatus">OFFLINE</div>
 
     <div id="setupBox">
-        <textarea id="remoteOfferInput" placeholder="1. Paste Offer Token dari Laptop..."></textarea>
-        <button class="btn-action" style="width:100%; background:#28a745;" onclick="generateAnswer()">2. Buat Jawaban (Answer)</button>
-        <textarea id="remoteAnswerOutput" readonly placeholder="3. Salin ini & tempel ke Laptop..." style="margin-top:10px;"></textarea>
+        <button class="btn-action" style="width:100%; background:#28a745; margin-bottom:10px;" onclick="startScanner()">📷 SCAN QR LAPTOP</button>
+        <div id="reader"></div>
+
+        <textarea id="remoteOfferInput" placeholder="Atau Paste Offer Token dari Laptop..."></textarea>
+        <button class="btn-action" style="width:100%; background:#007bff;" onclick="generateAnswer()">Buat Jawaban (Answer)</button>
+        
+        <div id="qrOutputContainer"></div>
+        <textarea id="remoteAnswerOutput" readonly placeholder="Salin ini jika scan tidak aktif..." style="margin-top:10px; display:none;"></textarea>
     </div>
 
     <div class="grid" id="controlsBox" style="display:none;">
@@ -40,7 +50,22 @@
     </div>
 
     <script>
-        let remotePeer, remoteChannel;
+        let remotePeer, remoteChannel, html5QrCode;
+
+        function startScanner() {
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 200, height: 200 } },
+                (decodedText) => {
+                    document.getElementById('remoteOfferInput').value = decodedText;
+                    html5QrCode.stop();
+                    document.getElementById('reader').style.display = 'none';
+                    generateAnswer();
+                },
+                (errorMessage) => {}
+            ).catch(err => console.log(err));
+        }
 
         function generateAnswer() {
             const offerStr = document.getElementById('remoteOfferInput').value;
@@ -60,7 +85,17 @@
 
             remotePeer.onicecandidate = (e) => {
                 if(!e.candidate) {
-                    document.getElementById('remoteAnswerOutput').value = btoa(JSON.stringify(remotePeer.localDescription));
+                    const ansStr = btoa(JSON.stringify(remotePeer.localDescription));
+                    document.getElementById('remoteAnswerOutput').value = ansStr;
+                    document.getElementById('remoteAnswerOutput').style.display = 'block';
+                    
+                    const qrBox = document.getElementById('qrOutputContainer');
+                    qrBox.innerHTML = '';
+                    new QRCode(qrBox, {
+                        text: ansStr,
+                        width: 160,
+                        height: 160
+                    });
                 }
             };
 

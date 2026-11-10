@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Timer Sukses Ukin</title>
-    <!-- Library QR Code Ringan (Offline Support jika tersimpan di Cache Browser) -->
+    <!-- Library QR Code Generator & Scanner CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -342,41 +343,36 @@
             font-size: 0.95rem;
         }
 
-        /* Status WebRTC Peer */
-        .peer-status {
+        /* Status WebRTC Peer: HANYA TITIK SAJA */
+        .peer-status-dot {
             position: absolute;
             top: 2vh;
             left: 2vw;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            z-index: 50;
-            background: rgba(0,0,0,0.05);
-            padding: 4px 8px;
-            border-radius: 6px;
-            border: 1px solid #ddd;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
             background-color: #ff4444;
+            z-index: 50;
+            box-shadow: 0 0 6px rgba(0,0,0,0.2);
+            transition: background-color 0.3s ease;
         }
-        .status-dot.connected {
+
+        .peer-status-dot.connected {
             background-color: #28a745;
+        }
+
+        /* Container QR Code Modal */
+        #qrcodeContainer {
+            display: flex;
+            justify-content: center;
+            margin: 12px 0;
         }
     </style>
 </head>
 <body>
 
-    <!-- Indicator Remote Status -->
-    <div class="peer-status">
-        <div class="status-dot" id="statusDot"></div>
-        <span id="statusText">Remote Offline</span>
-    </div>
+    <!-- Indikator Titik Pojok Kiri Atas (Tanpa Teks) -->
+    <div class="peer-status-dot" id="statusDot" title="Status Remote"></div>
 
     <button class="fullscreen-btn" id="fullscreenBtn" onclick="toggleFullscreen()" title="Layar Penuh (Tekan F)">
         <svg id="fullscreenIcon" viewBox="0 0 24 24">
@@ -407,7 +403,6 @@
             <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8zm-1 12H11V8h2v9z"/></svg>
         </button>
         
-        <!-- Tombol Tambahan untuk Hubungkan Remote WebRTC -->
         <button class="btn btn-outline" onclick="openRemoteModal()" title="Sambungkan HP Remote">
             <svg viewBox="0 0 24 24"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
         </button>
@@ -421,17 +416,17 @@
         <div class="countdown-number" id="countdownNumber">10</div>
     </div>
 
-    <!-- Modal WebRTC Remote Connection -->
+    <!-- Modal WebRTC Remote QR Code Connection -->
     <div class="modal-overlay" id="remoteModalOverlay">
         <div class="modal">
             <button class="modal-close-btn" onclick="closeRemoteModal()">✕</button>
-            <h2>Sambungkan HP Remote (Offline WebRTC)</h2>
+            <h2 style="text-align:center;">Sambungkan HP Remote</h2>
             
-            <p style="font-size:0.85rem; margin-bottom:10px;">1. Buka <code>remote.html</code> di HP Anda.<br>2. Tempelkan/Scan <strong>Offer Token</strong> ini ke HP:</p>
-            <textarea id="offerToken" style="width:100%; height:80px; font-size:0.75rem;" readonly onclick="this.select()"></textarea>
+            <p style="font-size:0.85rem; text-align:center;">1. Scan QR ini dari HP Anda via <code>remote.html</code>:</p>
+            <div id="qrcodeContainer"></div>
 
-            <p style="font-size:0.85rem; margin-top:12px; margin-bottom:6px;">3. Tempelkan <strong>Answer Token</strong> dari HP ke sini:</p>
-            <textarea id="answerToken" style="width:100%; height:80px; font-size:0.75rem;" placeholder="Paste kode jawaban dari HP di sini..."></textarea>
+            <p style="font-size:0.85rem; margin-top:12px; margin-bottom:6px;">2. Scan Answer QR dari HP atau Tempel Token dari HP di sini:</p>
+            <textarea id="answerToken" style="width:100%; height:60px; font-size:0.75rem;" placeholder="Paste kode dari HP..."></textarea>
             
             <button class="btn" style="background:#000; color:#fff; width:100%; margin-top:10px; padding:8px;" onclick="acceptRemoteAnswer()">Hubungkan HP</button>
         </div>
@@ -830,7 +825,7 @@
             resetTimer();
         }
 
-        /* LOGIKA WEBRTC PEER-TO-PEER (OFFLINE REMOTE) */
+        /* LOGIKA WEBRTC & GENERATE QR CODE */
         let localPeer, dataChannel;
 
         function initWebRTC() {
@@ -839,13 +834,11 @@
 
             dataChannel.onopen = () => {
                 document.getElementById('statusDot').classList.add('connected');
-                document.getElementById('statusText').textContent = 'Remote Terhubung';
                 closeRemoteModal();
             };
 
             dataChannel.onclose = () => {
                 document.getElementById('statusDot').classList.remove('connected');
-                document.getElementById('statusText').textContent = 'Remote Offline';
             };
 
             dataChannel.onmessage = (e) => {
@@ -871,7 +864,14 @@
 
             localPeer.onicecandidate = (e) => {
                 if (!e.candidate) {
-                    document.getElementById('offerToken').value = btoa(JSON.stringify(localPeer.localDescription));
+                    const offerData = btoa(JSON.stringify(localPeer.localDescription));
+                    const qrContainer = document.getElementById('qrcodeContainer');
+                    qrContainer.innerHTML = '';
+                    new QRCode(qrContainer, {
+                        text: offerData,
+                        width: 180,
+                        height: 180
+                    });
                 }
             };
 
