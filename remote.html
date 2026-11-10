@@ -386,6 +386,7 @@
             setInterval(() => {
                 const now = Date.now();
                 if (remoteIsRunning && remoteTargetInterval && remoteTargetTotal) {
+                    // Gunakan Math.max(0, Math.ceil((target - now) / 1000)) agar persis sama dengan perhitungan laptop
                     const intervalSec = Math.max(0, Math.ceil((remoteTargetInterval - now) / 1000));
                     const grandSec = Math.max(0, Math.ceil((remoteTargetTotal - now) / 1000));
                     const countUpSec = remoteStartTimestamp ? Math.floor((now - remoteStartTimestamp) / 1000) : 0;
@@ -398,7 +399,7 @@
                     document.getElementById('remoteTotalDisp').textContent = formatTime(remoteGrandSec);
                     document.getElementById('remoteCountUpDisp').textContent = formatTime(Math.floor(remoteAccumulatedTime / 1000));
                 }
-            }, 50);
+            }, 16); // Dipercepat ke 16ms (~60fps) untuk presisi maksimal
         }
 
         function handleToggleCmd() {

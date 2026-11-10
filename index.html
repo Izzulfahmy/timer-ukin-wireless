@@ -648,8 +648,8 @@
             const now = Date.now();
             elapsedTimeAccumulated = now - timerStartTimestamp;
 
-            totalSeconds = Math.ceil((targetEndTimeInterval - now) / 1000);
-            grandTotalSeconds = Math.ceil((targetEndTimeGrandTotal - now) / 1000);
+            totalSeconds = Math.max(0, Math.ceil((targetEndTimeInterval - now) / 1000));
+            grandTotalSeconds = Math.max(0, Math.ceil((targetEndTimeGrandTotal - now) / 1000));
 
             if (isIntervalMode) {
                 while (totalSeconds <= 0 && currentIntervalIndex < intervals.length - 1) {
@@ -660,7 +660,7 @@
                     targetEndTimeInterval += (nextDuration * 1000);
                     sintaksTitleEl.textContent = item.name;
                     
-                    totalSeconds = Math.ceil((targetEndTimeInterval - now) / 1000);
+                    totalSeconds = Math.max(0, Math.ceil((targetEndTimeInterval - now) / 1000));
                 }
             }
 
