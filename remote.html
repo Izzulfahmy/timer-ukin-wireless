@@ -14,7 +14,9 @@
         .btn-action:active { opacity: 0.8; }
         
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
-        .btn-main { grid-column: span 2; background: #28a745; font-size: 1.3rem; padding: 18px; }
+        .btn-main { grid-column: span 2; font-size: 1.3rem; padding: 18px; }
+        .btn-main.is-play { background: #28a745; }
+        .btn-main.is-pause { background: #ffc107; color: #000; }
         .btn-reset { background: #dc3545; grid-column: span 2; }
         
         .status { margin-bottom: 12px; font-weight: bold; font-size: 0.9rem; color: #ff4444; }
@@ -101,14 +103,14 @@
         </div>
 
         <div class="grid">
-            <button class="btn-action btn-main" onclick="sendCmd('TOGGLE')">PLAY / PAUSE</button>
-            <button class="btn-action" style="background:#333;" onclick="sendCmd('-10')">-10s</button>
-            <button class="btn-action" style="background:#333;" onclick="sendCmd('+10')">+10s</button>
-            <button class="btn-action" style="background:#333;" onclick="sendCmd('-5')">-5s</button>
-            <button class="btn-action" style="background:#333;" onclick="sendCmd('+5')">+5s</button>
-            <button class="btn-action" style="background:#444;" onclick="sendCmd('PREV')">‹ Sintaks Lalu</button>
-            <button class="btn-action" style="background:#444;" onclick="sendCmd('NEXT')">Sintaks Next ›</button>
-            <button class="btn-action btn-reset" onclick="sendCmd('RESET')">RESET</button>
+            <button class="btn-action btn-main is-play" id="btnToggle" onclick="handleToggleCmd()">PLAY</button>
+            <button class="btn-action" style="background:#333;" onclick="sendCmd('-10', 'Kurangi 10 detik timer?')">-10s</button>
+            <button class="btn-action" style="background:#333;" onclick="sendCmd('+10', 'Tambah 10 detik timer?')">+10s</button>
+            <button class="btn-action" style="background:#333;" onclick="sendCmd('-5', 'Kurangi 5 detik timer?')">-5s</button>
+            <button class="btn-action" style="background:#333;" onclick="sendCmd('+5', 'Tambah 5 detik timer?')">+5s</button>
+            <button class="btn-action" style="background:#444;" onclick="sendCmd('PREV', 'Kembali ke sintaks sebelumnya?')">‹ Sintaks Lalu</button>
+            <button class="btn-action" style="background:#444;" onclick="sendCmd('NEXT', 'Lanjut ke sintaks berikutnya?')">Sintaks Next ›</button>
+            <button class="btn-action btn-reset" onclick="sendCmd('RESET', 'Yakin ingin mereset timer dari awal?')">RESET</button>
         </div>
     </div>
 
@@ -192,6 +194,15 @@
                         remoteTotalSec = data.totalSeconds;
                         remoteGrandSec = data.grandTotalSeconds;
                         document.getElementById('remoteSintaksName').textContent = data.sintaksName || 'TIMER';
+
+                        const toggleBtn = document.getElementById('btnToggle');
+                        if (remoteIsRunning) {
+                            toggleBtn.textContent = 'PAUSE';
+                            toggleBtn.className = 'btn-action btn-main is-pause';
+                        } else {
+                            toggleBtn.textContent = 'PLAY';
+                            toggleBtn.className = 'btn-action btn-main is-play';
+                        }
                     } else {
                         alert('Koneksi terputus! Laptop me-refresh atau menutup halaman.');
                         location.reload();
@@ -200,7 +211,7 @@
 
                 startHighPrecisionTicker();
             } catch (err) {
-                alert('Gagal terhubung: ' + err.message + '\nPastikan rules Realtime Database di Firebase sudah diset publik (.read: true, .write: true)');
+                alert('Gagal terhubung: ' + err.message);
                 btn.textContent = "HUBUNGKAN";
                 btn.disabled = false;
             }
@@ -222,10 +233,25 @@
                     document.getElementById('remoteTotalDisp').textContent = formatTime(remoteGrandSec);
                     document.getElementById('remoteCountUpDisp').textContent = formatTime(Math.floor(remoteAccumulatedTime / 1000));
                 }
-            }, 100);
+            }, 50); // Ticker presisi 50ms
         }
 
-        function sendCmd(action) {
+        function handleToggleCmd() {
+            if (remoteIsRunning) {
+                // Jika sedang berjalan (PAUSE), minta konfirmasi
+                if (confirm('Jeda/Pause timer saat ini?')) {
+                    sendCmd('TOGGLE');
+                }
+            } else {
+                // Jika sedang berhenti (PLAY), langsung eksekusi tanpa konfirmasi
+                sendCmd('TOGGLE');
+            }
+        }
+
+        function sendCmd(action, confirmMsg = null) {
+            if (confirmMsg && !confirm(confirmMsg)) {
+                return;
+            }
             if (cmdRef) {
                 set(cmdRef, {
                     action: action,
@@ -236,6 +262,7 @@
 
         document.getElementById('btnConnect').addEventListener('click', connectRemote);
         window.sendCmd = sendCmd;
+        window.handleToggleCmd = handleToggleCmd;
     </script>
 </body>
 </html>

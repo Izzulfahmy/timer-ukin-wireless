@@ -26,13 +26,13 @@
 
         .fullscreen-btn {
             position: absolute;
-            top: 2vh;
-            right: 2vw;
-            width: 32px;
-            height: 32px;
+            top: 8px;
+            right: 8px;
+            width: 28px;
+            height: 28px;
             background: transparent;
-            border: 2px solid #000000;
-            border-radius: 6px;
+            border: 1.5px solid #000000;
+            border-radius: 4px;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -48,8 +48,8 @@
         }
 
         .fullscreen-btn svg {
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             fill: #000000;
             transition: fill 0.3s ease;
         }
@@ -340,64 +340,60 @@
             font-size: 0.95rem;
         }
 
+        /* TOMBOL BADGE PIN LEBIH KECIL & DI POJOK ATAS KIRI */
         .peer-status-box {
             position: absolute;
-            top: 2vh;
-            left: 2vw;
+            top: 8px;
+            left: 8px;
             z-index: 50;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
-        .remote-connect-btn {
-            width: 32px;
-            height: 32px;
+        .pin-badge-btn {
+            min-width: 28px;
+            height: 28px;
+            padding: 0 6px;
             background: transparent;
-            border: 2px solid #000000;
-            border-radius: 6px;
+            border: 1.5px solid #000000;
+            border-radius: 4px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             opacity: 0.3;
             transition: all 0.3s ease;
+            font-weight: 900;
+            font-size: 0.85rem;
+            color: #28a745;
+            letter-spacing: 1px;
         }
 
-        .remote-connect-btn:hover {
+        .pin-badge-btn:hover {
             opacity: 1;
             background-color: #000000;
+            color: #28a745;
         }
 
-        .remote-connect-btn svg {
-            width: 16px;
-            height: 16px;
+        .pin-badge-btn svg {
+            width: 14px;
+            height: 14px;
             fill: #000000;
             transition: fill 0.3s ease;
         }
 
-        .remote-connect-btn:hover svg {
+        .pin-badge-btn:hover svg {
             fill: #ffffff;
-        }
-
-        .pin-number-text {
-            font-weight: 900;
-            font-size: 1.1rem;
-            color: #28a745;
-            letter-spacing: 2px;
-            display: none;
         }
     </style>
 </head>
 <body>
 
     <div class="peer-status-box">
-        <button class="remote-connect-btn" id="remoteIconBtn" onclick="initRemoteRoom()" title="Aktifkan / Sambungkan Remote HP">
-            <svg viewBox="0 0 24 24">
+        <button class="pin-badge-btn" id="remoteIconBtn" onclick="initRemoteRoom()" title="Aktifkan / Sambungkan Remote HP">
+            <svg id="hpIconSvg" viewBox="0 0 24 24">
                 <path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/>
             </svg>
+            <span id="pinTextDisplay" style="display:none;"></span>
         </button>
-        <div class="pin-number-text" id="pinDisplay">----</div>
     </div>
 
     <button class="fullscreen-btn" id="fullscreenBtn" onclick="toggleFullscreen()" title="Layar Penuh (Tekan F)">
@@ -633,11 +629,7 @@
                 requestWakeLock();
 
                 const now = Date.now();
-                if (!timerStartTimestamp) {
-                    timerStartTimestamp = now - elapsedTimeAccumulated;
-                } else {
-                    timerStartTimestamp = now - elapsedTimeAccumulated;
-                }
+                timerStartTimestamp = now - elapsedTimeAccumulated;
 
                 if (remainingIntervalMs > 0 || remainingTotalMs > 0) {
                     targetEndTimeInterval = now + remainingIntervalMs;
@@ -859,16 +851,19 @@
             resetTimer();
         }
 
-        /* AKSI TOMBOL SIMBOL HP: MEMBUAT ROOM SECARA EKSPLISIT */
+        /* AKSI TOMBOL BADGE KODE ROOM */
         async function initRemoteRoom() {
             if (roomRef) {
                 await remove(roomRef);
             }
 
             roomPin = Math.floor(1000 + Math.random() * 9000).toString();
-            const pinDisplay = document.getElementById('pinDisplay');
-            pinDisplay.textContent = roomPin;
-            pinDisplay.style.display = 'block';
+            
+            // Ganti ikon HP menjadi teks PIN 4 angka
+            document.getElementById('hpIconSvg').style.display = 'none';
+            const pinTxt = document.getElementById('pinTextDisplay');
+            pinTxt.textContent = roomPin;
+            pinTxt.style.display = 'inline';
 
             roomRef = ref(db, 'sessions/' + roomPin);
             stateRef = ref(db, 'sessions/' + roomPin + '/state');
