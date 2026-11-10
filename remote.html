@@ -3,52 +3,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Remote Control UKIN (Offline)</title>
+    <title>Remote Control UKIN</title>
     <style>
         * { box-sizing: border-box; margin:0; padding:0; }
-        html, body { height: 100%; height: 100dvh; overflow: hidden; background: #0d0f12; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { display: flex; flex-direction: column; padding: 12px; justify-content: space-between; }
+        html, body {
+            height: 100%;
+            height: 100dvh;
+            overflow: hidden;
+            background: #0d0f12;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
 
-        .header-title { font-size: 0.95rem; font-weight: 800; letter-spacing: 1px; color: #888; text-transform: uppercase; text-align: center; }
-        .status-badge { margin-top: 4px; margin-bottom: 8px; font-weight: 800; font-size: 0.85rem; color: #ff4444; text-align: center; }
+        body {
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+            justify-content: space-between;
+        }
+
+        .header-title {
+            font-size: 0.95rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: #888;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .status-badge {
+            margin-top: 4px;
+            margin-bottom: 8px;
+            font-weight: 800;
+            font-size: 0.85rem;
+            color: #ff4444;
+            text-align: center;
+        }
         .status-badge.connected { color: #28a745; }
 
-        #loginBox { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 12px; }
-        .input-pin { width: 100%; padding: 16px; font-size: 1.8rem; text-align: center; border-radius: 10px; border: 2px solid #333; background: #181b20; color: #fff; font-weight: bold; letter-spacing: 8px; outline: none; }
-        .btn-connect { padding: 16px; font-size: 1.1rem; font-weight: 800; border-radius: 10px; border: none; background: #007bff; color: #fff; cursor: pointer; }
+        /* LOGIN FORM */
+        #loginBox {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 12px;
+        }
 
-        #controlsBox { flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; height: 100%; }
-        .timer-monitor-box { background: #181b20; border: 1px solid #2a2e35; border-radius: 12px; padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; }
-        .sintaks-name-preview { font-size: 0.85rem; font-weight: 800; color: #ffc107; text-align: left; line-height: 1.3; word-wrap: break-word; word-break: break-word; margin-bottom: 4px; border-bottom: 1px dashed #333; padding-bottom: 6px; }
+        .input-pin {
+            width: 100%;
+            padding: 16px;
+            font-size: 1.8rem;
+            text-align: center;
+            border-radius: 10px;
+            border: 2px solid #333;
+            background: #181b20;
+            color: #fff;
+            font-weight: bold;
+            letter-spacing: 8px;
+            outline: none;
+        }
 
-        .monitor-row { display: flex; justify-content: space-between; align-items: center; }
-        .monitor-label { font-size: 0.7rem; font-weight: 700; color: #8a909a; text-transform: uppercase; }
-        .monitor-val { font-size: 1.35rem; font-weight: 900; font-variant-numeric: tabular-nums; color: #fff; }
+        .btn-connect {
+            padding: 16px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            border-radius: 10px;
+            border: none;
+            background: #007bff;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        /* MONITOR BOX */
+        #controlsBox {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 10px;
+            height: 100%;
+        }
+
+        .timer-monitor-box {
+            background: #181b20;
+            border: 1px solid #2a2e35;
+            border-radius: 12px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .sintaks-name-preview {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: #ffc107;
+            text-align: left;
+            line-height: 1.3;
+            word-wrap: break-word;
+            word-break: break-word;
+            margin-bottom: 4px;
+            border-bottom: 1px dashed #333;
+            padding-bottom: 6px;
+        }
+
+        .monitor-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .monitor-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #8a909a;
+            text-transform: uppercase;
+        }
+
+        .monitor-val {
+            font-size: 1.35rem;
+            font-weight: 900;
+            font-variant-numeric: tabular-nums;
+            color: #fff;
+        }
+
         .countup-val { color: #00d2ff; }
 
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: 1; }
-        .btn-action { border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 800; color: #fff; background: #252930; cursor: pointer; display: flex; align-items: center; justify-content: center; user-select: none; -webkit-tap-highlight-color: transparent; }
+        /* GRID TOMBOL */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .btn-action {
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #fff;
+            background: #252930;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
         .btn-action:active { opacity: 0.7; }
 
-        .btn-main { grid-column: span 2; font-size: 1.3rem; letter-spacing: 1px; }
+        .btn-main {
+            grid-column: span 2;
+            font-size: 1.3rem;
+            letter-spacing: 1px;
+        }
         .btn-main.is-play { background: #28a745; }
         .btn-main.is-pause { background: #ffc107; color: #000; }
         .btn-reset { background: #dc3545; grid-column: span 2; }
 
-        .confirm-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
-        .confirm-modal-overlay.active { opacity: 1; pointer-events: auto; }
-        .confirm-card { background: #1c2026; border: 1px solid #333; border-radius: 14px; padding: 20px; width: 85%; max-width: 340px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .confirm-card h3 { font-size: 1.1rem; margin-bottom: 8px; color: #fff; }
-        .confirm-card p { font-size: 0.9rem; color: #aaa; margin-bottom: 20px; line-height: 1.4; }
-        .confirm-actions { display: flex; gap: 10px; }
-        .btn-modal { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: 800; font-size: 0.95rem; cursor: pointer; }
+        /* CUSTOM MODAL CONFIRMATION UI */
+        .confirm-modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .confirm-modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .confirm-card {
+            background: #1c2026;
+            border: 1px solid #333;
+            border-radius: 14px;
+            padding: 20px;
+            width: 85%;
+            max-width: 340px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .confirm-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .confirm-card p {
+            font-size: 0.9rem;
+            color: #aaa;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-modal {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 800;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
         .btn-cancel { background: #333; color: #fff; }
         .btn-ok { background: #007bff; color: #fff; }
     </style>
 </head>
 <body>
     <div>
-        <div class="header-title">REMOTE TIMER UKIN (OFFLINE)</div>
+        <div class="header-title">REMOTE TIMER UKIN</div>
         <div class="status-badge" id="remoteStatus">OFFLINE</div>
     </div>
 
@@ -86,6 +266,7 @@
         </div>
     </div>
 
+    <!-- UI MODAL KONFIRMASI CUSTOM -->
     <div class="confirm-modal-overlay" id="confirmModal">
         <div class="confirm-card">
             <h3>Konfirmasi Aksi</h3>
@@ -97,9 +278,28 @@
         </div>
     </div>
 
-    <script>
-        let ws;
+    <!-- FIREBASE SDK v10 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCVeFH7BlVTiS93w4LSLIgDF6KtJzx3xvk",
+            authDomain: "belajarfirebase-456608.firebaseapp.com",
+            projectId: "belajarfirebase-456608",
+            storageBucket: "belajarfirebase-456608.firebasestorage.app",
+            messagingSenderId: "644048643792",
+            appId: "1:644048643792:web:f41282e7c380e76a4de0d5",
+            databaseURL: "https://belajarfirebase-456608-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
         let activePin = '';
+        let cmdRef = null;
+        let stateRef = null;
+
         let remoteTargetInterval = null;
         let remoteTargetTotal = null;
         let remoteStartTimestamp = null;
@@ -117,60 +317,76 @@
             return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
         }
 
-        function connectRemote() {
+        async function connectRemote() {
             const pinInput = document.getElementById('pinInput');
             const pin = pinInput.value.trim();
+            
             if (pin.length !== 4) {
-                alert('Masukkan 4 angka PIN yang tertera di layar Laptop!');
+                alert('Masukkan 4 angka kode yang tertera di laptop!');
                 return;
             }
 
             activePin = pin;
-            const host = window.location.host;
-            ws = new WebSocket(`ws://${host}`);
+            stateRef = ref(db, 'sessions/' + activePin + '/state');
+            cmdRef = ref(db, 'sessions/' + activePin + '/command');
 
-            ws.onopen = () => {
-                document.getElementById('remoteStatus').textContent = 'TERHUBUNG (' + activePin + ')';
-                document.getElementById('remoteStatus').className = 'status-badge connected';
-                document.getElementById('loginBox').style.display = 'none';
-                document.getElementById('controlsBox').style.display = 'flex';
-                startHighPrecisionTicker();
-            };
+            const btn = document.getElementById('btnConnect');
+            btn.textContent = "MENGHUBUNGKAN...";
+            btn.disabled = true;
 
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                if (data.type === 'STATE_UPDATE') {
-                    const st = data.data;
-                    remoteTargetInterval = st.targetEndTimeInterval;
-                    remoteTargetTotal = st.targetEndTimeGrandTotal;
-                    remoteStartTimestamp = st.timerStartTimestamp;
-                    remoteAccumulatedTime = st.elapsedTimeAccumulated || 0;
-                    remoteIsRunning = st.isRunning;
-                    remoteTotalSec = st.totalSeconds;
-                    remoteGrandSec = st.grandTotalSeconds;
-                    document.getElementById('remoteSintaksName').textContent = st.sintaksName || 'TIMER';
-
-                    const toggleBtn = document.getElementById('btnToggle');
-                    if (remoteIsRunning) {
-                        toggleBtn.textContent = 'PAUSE';
-                        toggleBtn.className = 'btn-action btn-main is-pause';
-                    } else {
-                        toggleBtn.textContent = 'PLAY';
-                        toggleBtn.className = 'btn-action btn-main is-play';
-                    }
+            try {
+                const snap = await get(stateRef);
+                if (!snap.exists()) {
+                    alert('PIN ' + pin + ' belum aktif! Silakan klik tombol PIN di laptop terlebih dahulu.');
+                    btn.textContent = "HUBUNGKAN";
+                    btn.disabled = false;
+                    return;
                 }
-            };
 
-            ws.onclose = () => {
-                alert('Koneksi terputus ke server laptop!');
-                location.reload();
-            };
+                onValue(stateRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        document.getElementById('remoteStatus').textContent = 'TERHUBUNG (' + activePin + ')';
+                        document.getElementById('remoteStatus').className = 'status-badge connected';
+                        document.getElementById('loginBox').style.display = 'none';
+                        document.getElementById('controlsBox').style.display = 'flex';
+
+                        remoteTargetInterval = data.targetEndTimeInterval;
+                        remoteTargetTotal = data.targetEndTimeGrandTotal;
+                        remoteStartTimestamp = data.timerStartTimestamp;
+                        remoteAccumulatedTime = data.elapsedTimeAccumulated || 0;
+                        remoteIsRunning = data.isRunning;
+                        remoteTotalSec = data.totalSeconds;
+                        remoteGrandSec = data.grandTotalSeconds;
+                        document.getElementById('remoteSintaksName').textContent = data.sintaksName || 'TIMER';
+
+                        const toggleBtn = document.getElementById('btnToggle');
+                        if (remoteIsRunning) {
+                            toggleBtn.textContent = 'PAUSE';
+                            toggleBtn.className = 'btn-action btn-main is-pause';
+                        } else {
+                            toggleBtn.textContent = 'PLAY';
+                            toggleBtn.className = 'btn-action btn-main is-play';
+                        }
+                    } else {
+                        alert('Koneksi terputus! Laptop me-refresh atau menutup halaman.');
+                        location.reload();
+                    }
+                });
+
+                startHighPrecisionTicker();
+            } catch (err) {
+                alert('Gagal terhubung: ' + err.message);
+                btn.textContent = "HUBUNGKAN";
+                btn.disabled = false;
+            }
         }
 
         function startHighPrecisionTicker() {
             setInterval(() => {
                 const now = Date.now();
                 if (remoteIsRunning && remoteTargetInterval && remoteTargetTotal) {
+                    // Gunakan Math.max(0, Math.ceil((target - now) / 1000)) agar persis sama dengan perhitungan laptop
                     const intervalSec = Math.max(0, Math.ceil((remoteTargetInterval - now) / 1000));
                     const grandSec = Math.max(0, Math.ceil((remoteTargetTotal - now) / 1000));
                     const countUpSec = remoteStartTimestamp ? Math.floor((now - remoteStartTimestamp) / 1000) : 0;
@@ -183,7 +399,7 @@
                     document.getElementById('remoteTotalDisp').textContent = formatTime(remoteGrandSec);
                     document.getElementById('remoteCountUpDisp').textContent = formatTime(Math.floor(remoteAccumulatedTime / 1000));
                 }
-            }, 16);
+            }, 16); // Dipercepat ke 16ms (~60fps) untuk presisi maksimal
         }
 
         function handleToggleCmd() {
@@ -206,21 +422,25 @@
         }
 
         function execCmd(action) {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                    type: 'COMMAND',
-                    pin: activePin,
-                    action: action
-                }));
+            if (cmdRef) {
+                set(cmdRef, {
+                    action: action,
+                    timestamp: Date.now()
+                });
             }
         }
 
         document.getElementById('btnConfirmOk').addEventListener('click', () => {
-            if (pendingAction) execCmd(pendingAction);
+            if (pendingAction) {
+                execCmd(pendingAction);
+            }
             closeConfirmModal();
         });
 
         document.getElementById('btnConnect').addEventListener('click', connectRemote);
+        window.askCmd = askCmd;
+        window.closeConfirmModal = closeConfirmModal;
+        window.handleToggleCmd = handleToggleCmd;
     </script>
 </body>
 </html>

@@ -5,79 +5,394 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Timer Sukses Ukin</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            height: 100vh; display: flex; flex-direction: column; justify-content: space-between;
-            align-items: center; overflow: hidden; user-select: none; background-color: #ffffff; position: relative;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+            background-color: #ffffff;
+            position: relative;
         }
 
         .fullscreen-btn {
-            position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; background: transparent;
-            border: 1.5px solid #000; border-radius: 4px; cursor: pointer; display: flex; align-items: center;
-            justify-content: center; z-index: 50; opacity: 0.15; transition: all 0.3s ease;
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 28px;
+            height: 28px;
+            background: transparent;
+            border: 1.5px solid #000000;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50; 
+            opacity: 0.15;
+            transition: all 0.3s ease;
         }
-        .fullscreen-btn:hover { opacity: 1; background-color: #000; }
-        .fullscreen-btn svg { width: 14px; height: 14px; fill: #000; transition: fill 0.3s ease; }
-        .fullscreen-btn:hover svg { fill: #fff; }
+
+        .fullscreen-btn:hover {
+            opacity: 1;
+            background-color: #000000;
+        }
+
+        .fullscreen-btn svg {
+            width: 14px;
+            height: 14px;
+            fill: #000000;
+            transition: fill 0.3s ease;
+        }
+
+        .fullscreen-btn:hover svg {
+            fill: #ffffff;
+        }
 
         .section-interval {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            flex: 2.2; width: 100%; background-color: #ffffff; color: #000000; padding: 1vh 2vw;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 2.2;
+            width: 100%;
+            background-color: #ffffff;
+            color: #000000;
+            padding: 1vh 2vw;
         }
+
         .sintaks-title {
-            font-size: 6.5vw; font-weight: 900; text-transform: uppercase; letter-spacing: 0.02em;
-            text-align: center; color: #000000; margin-bottom: 0.5vh; line-height: 1.05; width: 95%; word-wrap: break-word;
+            font-size: 6.5vw;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            text-align: center;
+            color: #000000;
+            margin-bottom: 0.5vh;
+            line-height: 1.05;
+            width: 95%;
+            word-wrap: break-word;
         }
 
         .section-total {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            flex: 1.1; width: 100%; background-color: #000000; color: #ffffff; border-top: 4px solid #000000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1.1;
+            width: 100%;
+            background-color: #000000;
+            color: #ffffff;
+            border-top: 4px solid #000000;
         }
 
-        #display { font-size: 16vw; font-weight: 900; line-height: 0.95; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; text-align: center; width: 100%; }
-        #totalDisplay { font-size: 13vw; font-weight: 900; line-height: 0.95; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; text-align: center; width: 100%; }
+        #display {
+            font-size: 16vw;
+            font-weight: 900;
+            line-height: 0.95;
+            letter-spacing: -0.04em;
+            font-variant-numeric: tabular-nums;
+            text-align: center;
+            width: 100%;
+        }
 
-        .floating-controls { position: absolute; bottom: 1.5vh; right: 2vw; display: flex; gap: 6px; z-index: 50; opacity: 0.2; transition: opacity 0.3s ease; }
-        .floating-controls:hover { opacity: 1; }
-        .btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; background-color: #fff; color: #000; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; }
-        .btn-outline { background-color: transparent; color: #fff; border-color: #fff; }
-        .btn:hover { background-color: #ddd; color: #000; }
-        .btn-outline:hover { background-color: #fff; color: #000; }
-        .btn svg { width: 16px; height: 16px; fill: currentColor; }
-        .btn-text { font-size: 0.8rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+        #totalDisplay {
+            font-size: 13vw;
+            font-weight: 900;
+            line-height: 0.95;
+            letter-spacing: -0.04em;
+            font-variant-numeric: tabular-nums;
+            text-align: center;
+            width: 100%;
+        }
 
-        .countdown-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); display: flex; justify-content: center; align-items: center; z-index: 40; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
-        .countdown-overlay.active { opacity: 1; }
-        .countdown-number { font-size: 50vw; font-weight: 900; color: #ffffff; line-height: 1; text-shadow: 0 10px 40px rgba(0,0,0,0.8); }
-        .countdown-number.banner-selesai { font-size: 10vw; text-align: center; color: #ff4444; letter-spacing: 0.02em; text-shadow: 0 5px 20px rgba(0,0,0,0.9); }
+        .floating-controls {
+            position: absolute;
+            bottom: 1.5vh;
+            right: 2vw;
+            display: flex;
+            gap: 6px;
+            z-index: 50; 
+            opacity: 0.2;
+            transition: opacity 0.3s ease;
+        }
 
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
-        .modal-overlay.active { opacity: 1; pointer-events: auto; }
-        .modal { position: relative; background: #ffffff; color: #000000; border: 3px solid #000000; border-radius: 12px; padding: 24px; width: 90%; max-width: 540px; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
-        .modal-close-btn { position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; background: transparent; border: 2px solid #000; border-radius: 6px; font-size: 1.2rem; font-weight: 800; line-height: 1; color: #000; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .modal h2 { font-size: 1.4rem; margin-bottom: 16px; border-bottom: 2px solid #000; padding-bottom: 6px; padding-right: 36px; }
+        .floating-controls:hover {
+            opacity: 1;
+        }
 
-        .input-group-row { display: flex; gap: 10px; margin-bottom: 16px; }
-        .input-field { display: flex; flex-direction: column; flex: 1; }
-        .input-field label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
-        input[type="number"], input[type="text"] { padding: 8px; font-size: 0.95rem; font-weight: 600; border: 2px solid #000; border-radius: 6px; outline: none; background: #fff; color: #000; }
+        .btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #ffffff;
+            background-color: #ffffff;
+            color: #000000;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
 
-        .interval-list { margin-top: 12px; margin-bottom: 16px; }
-        .interval-item { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; background: #f8f8f8; padding: 8px; border-radius: 6px; border: 1px solid #ddd; }
-        .interval-item input[type="text"] { flex: 2; }
-        .interval-item input[type="number"] { width: 50px; }
-        .btn-del { background: #000; color: #fff; border: none; border-radius: 4px; width: 30px; height: 30px; cursor: pointer; font-weight: bold; }
-        .checkbox-group { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; font-weight: 600; font-size: 0.95rem; }
+        .btn-outline {
+            background-color: transparent;
+            color: #ffffff;
+            border-color: #ffffff;
+        }
 
-        .peer-status-box { position: absolute; top: 8px; left: 8px; z-index: 50; }
-        .pin-badge-btn { min-width: 28px; height: 28px; padding: 0 6px; background: transparent; border: 1.5px solid #000000; border-radius: 4px; display: flex; align-items: center; justify-content: center; opacity: 0.4; font-weight: 900; font-size: 0.85rem; color: #28a745; letter-spacing: 1px; }
+        .btn:hover {
+            background-color: #dddddd;
+            color: #000000;
+        }
+
+        .btn-outline:hover {
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        .btn svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        .btn-text {
+            font-size: 0.8rem;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .countdown-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.85); 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 40;
+            opacity: 0;
+            pointer-events: none; 
+            transition: opacity 0.2s ease;
+        }
+        .countdown-overlay.active {
+            opacity: 1;
+        }
+        
+        .countdown-number {
+            font-size: 50vw;
+            font-weight: 900;
+            color: #ffffff;
+            line-height: 1;
+            text-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        }
+
+        .countdown-number.banner-selesai {
+            font-size: 10vw;
+            text-align: center;
+            color: #ff4444; 
+            letter-spacing: 0.02em;
+            text-shadow: 0 5px 20px rgba(0,0,0,0.9);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            position: relative;
+            background: #ffffff;
+            color: #000000;
+            border: 3px solid #000000;
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 540px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 32px;
+            height: 32px;
+            background: transparent;
+            border: 2px solid #000000;
+            border-radius: 6px;
+            font-size: 1.2rem;
+            font-weight: 800;
+            line-height: 1;
+            color: #000000;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal h2 {
+            font-size: 1.4rem;
+            margin-bottom: 16px;
+            border-bottom: 2px solid #000000;
+            padding-bottom: 6px;
+            padding-right: 36px;
+        }
+
+        .input-group-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .input-field {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .input-field label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        input[type="number"], input[type="text"] {
+            padding: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border: 2px solid #000000;
+            border-radius: 6px;
+            outline: none;
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .interval-list {
+            margin-top: 12px;
+            margin-bottom: 16px;
+        }
+
+        .interval-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 8px;
+            background: #f8f8f8;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+
+        .interval-item input[type="text"] {
+            flex: 2;
+        }
+
+        .interval-item input[type="number"] {
+            width: 50px;
+        }
+
+        .btn-del {
+            background: #000000;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .peer-status-box {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            z-index: 50;
+        }
+
+        .pin-badge-btn {
+            min-width: 28px;
+            height: 28px;
+            padding: 0 6px;
+            background: transparent;
+            border: 1.5px solid #000000;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.3;
+            transition: all 0.3s ease;
+            font-weight: 900;
+            font-size: 0.85rem;
+            color: #28a745;
+            letter-spacing: 1px;
+        }
+
+        .pin-badge-btn:hover {
+            opacity: 1;
+            background-color: #000000;
+            color: #28a745;
+        }
+
+        .pin-badge-btn svg {
+            width: 14px;
+            height: 14px;
+            fill: #000000;
+            transition: fill 0.3s ease;
+        }
+
+        .pin-badge-btn:hover svg {
+            fill: #ffffff;
+        }
     </style>
 </head>
 <body>
 
     <div class="peer-status-box">
-        <div class="pin-badge-btn" id="pinDisplay" title="Kode PIN Remote HP Offline">----</div>
+        <button class="pin-badge-btn" id="remoteIconBtn" onclick="initRemoteRoom()" title="Aktifkan / Sambungkan Remote HP">
+            <svg id="hpIconSvg" viewBox="0 0 24 24">
+                <path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/>
+            </svg>
+            <span id="pinTextDisplay" style="display:none;"></span>
+        </button>
     </div>
 
     <button class="fullscreen-btn" id="fullscreenBtn" onclick="toggleFullscreen()" title="Layar Penuh (Tekan F)">
@@ -165,9 +480,24 @@
         </div>
     </div>
 
-    <script>
-        let ws;
-        let activePin = '';
+    <!-- FIREBASE SDK v10 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getDatabase, ref, set, remove, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCVeFH7BlVTiS93w4LSLIgDF6KtJzx3xvk",
+            authDomain: "belajarfirebase-456608.firebaseapp.com",
+            projectId: "belajarfirebase-456608",
+            storageBucket: "belajarfirebase-456608.firebasestorage.app",
+            messagingSenderId: "644048643792",
+            appId: "1:644048643792:web:f41282e7c380e76a4de0d5",
+            databaseURL: "https://belajarfirebase-456608-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
         let countdown;
         let isRunning = false;
         let isIntervalMode = true;
@@ -183,7 +513,13 @@
 
         let timerStartTimestamp = null;
         let elapsedTimeAccumulated = 0;
+
         let wakeLock = null; 
+
+        let roomPin = null;
+        let roomRef = null;
+        let stateRef = null;
+        let cmdRef = null;
 
         const playIconPath = "M8 5v14l11-7z";
         const pauseIconPath = "M6 19h4V5H6v14zm8-14v14h4V5h-4z";
@@ -207,65 +543,31 @@
         const sectionTotal = document.getElementById('sectionTotal');
         const fullscreenIcon = document.getElementById('fullscreenIcon');
 
-        function initWebSocket() {
-            const host = window.location.host;
-            ws = new WebSocket(`ws://${host}`);
-
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                if (data.type === 'INIT_PIN') {
-                    activePin = data.pin;
-                    document.getElementById('pinDisplay').textContent = activePin;
-                } else if (data.type === 'COMMAND' && data.pin === activePin) {
-                    handleRemoteCommand(data.action);
-                }
-            };
-        }
-
-        function handleRemoteCommand(action) {
-            if (action === 'TOGGLE') toggleTimer();
-            else if (action === 'RESET') resetTimer();
-            else if (action === '+10') adjustTime(10);
-            else if (action === '-10') adjustTime(-10);
-            else if (action === '+5') adjustTime(5);
-            else if (action === '-5') adjustTime(-5);
-            else if (action === 'NEXT' && currentIntervalIndex < intervals.length - 1) switchSintaksTarget(currentIntervalIndex + 1);
-            else if (action === 'PREV' && currentIntervalIndex > 0) switchSintaksTarget(currentIntervalIndex - 1);
-        }
-
-        function syncToWebSocket() {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                    type: 'STATE_UPDATE',
-                    data: {
-                        targetEndTimeInterval: targetEndTimeInterval || 0,
-                        targetEndTimeGrandTotal: targetEndTimeGrandTotal || 0,
-                        timerStartTimestamp: timerStartTimestamp || 0,
-                        elapsedTimeAccumulated: elapsedTimeAccumulated || 0,
-                        isRunning: isRunning,
-                        totalSeconds: totalSeconds,
-                        grandTotalSeconds: grandTotalSeconds,
-                        sintaksName: intervals[currentIntervalIndex] ? intervals[currentIntervalIndex].name : 'TIMER'
-                    }
-                }));
-            }
-        }
-
         async function requestWakeLock() {
             if ('wakeLock' in navigator) {
-                try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                } catch (err) {
+                    console.error('Wake Lock gagal:', err);
+                }
             }
         }
 
         function releaseWakeLock() {
-            if (wakeLock !== null) { wakeLock.release().then(() => { wakeLock = null; }); }
+            if (wakeLock !== null) {
+                wakeLock.release().then(() => {
+                    wakeLock = null;
+                });
+            }
         }
 
         function toggleFullscreen() {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().catch(err => console.log(err));
             } else {
-                if (document.exitFullscreen) document.exitFullscreen();
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
             }
         }
 
@@ -305,19 +607,24 @@
                 overlay.classList.remove('active');
             }
 
-            syncToWebSocket();
+            syncToFirebase();
         }
 
         function toggleTimer() {
-            if (isRunning) pauseTimer();
-            else startTimer();
+            if (isRunning) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
         }
 
         function startTimer() {
             if (!isRunning) {
                 if (totalSeconds <= 0 && grandTotalSeconds <= 0) return;
+
                 isRunning = true;
                 startIconPathEl.setAttribute('d', pauseIconPath); 
+
                 requestWakeLock();
 
                 const now = Date.now();
@@ -337,6 +644,7 @@
 
         function tick() {
             if (!isRunning) return;
+
             const now = Date.now();
             elapsedTimeAccumulated = now - timerStartTimestamp;
 
@@ -348,8 +656,10 @@
                     currentIntervalIndex++;
                     const item = intervals[currentIntervalIndex];
                     const nextDuration = (item.h * 3600) + (item.m * 60) + item.s;
+                    
                     targetEndTimeInterval += (nextDuration * 1000);
                     sintaksTitleEl.textContent = item.name;
+                    
                     totalSeconds = Math.max(0, Math.ceil((targetEndTimeInterval - now) / 1000));
                 }
             }
@@ -366,6 +676,7 @@
 
         function adjustTime(seconds) {
             let wasRunning = isRunning;
+            
             if (!isRunning) {
                 isRunning = true;
                 const now = Date.now();
@@ -380,6 +691,7 @@
 
             targetEndTimeInterval += (seconds * 1000);
             targetEndTimeGrandTotal += (seconds * 1000);
+            
             tick();
 
             if (!wasRunning) {
@@ -393,6 +705,7 @@
 
         function switchSintaksTarget(newIndex) {
             if (newIndex < 0 || newIndex >= intervals.length) return;
+            
             currentIntervalIndex = newIndex;
             
             let remainingSum = 0;
@@ -401,7 +714,9 @@
             }
 
             const item = intervals[currentIntervalIndex];
-            totalSeconds = (item.h * 3600) + (item.m * 60) + item.s;
+            const currentDuration = (item.h * 3600) + (item.m * 60) + item.s;
+
+            totalSeconds = currentDuration;
             grandTotalSeconds = remainingSum;
             sintaksTitleEl.textContent = item.name;
 
@@ -423,8 +738,10 @@
             const now = Date.now();
             remainingIntervalMs = targetEndTimeInterval - now;
             remainingTotalMs = targetEndTimeGrandTotal - now;
-            if (timerStartTimestamp) elapsedTimeAccumulated = now - timerStartTimestamp;
-            syncToWebSocket();
+            if (timerStartTimestamp) {
+                elapsedTimeAccumulated = now - timerStartTimestamp;
+            }
+            syncToFirebase();
         }
 
         function resetTimer() {
@@ -433,8 +750,10 @@
             startIconPathEl.setAttribute('d', playIconPath); 
             releaseWakeLock(); 
             
-            remainingIntervalMs = 0; remainingTotalMs = 0;
-            timerStartTimestamp = null; elapsedTimeAccumulated = 0;
+            remainingIntervalMs = 0;
+            remainingTotalMs = 0;
+            timerStartTimestamp = null;
+            elapsedTimeAccumulated = 0;
             
             if (isIntervalMode) {
                 currentIntervalIndex = 0;
@@ -452,7 +771,9 @@
         }
 
         function calculateGrandTotalFromIntervals() {
-            grandTotalSeconds = intervals.reduce((acc, item) => acc + (item.h * 3600) + (item.m * 60) + item.s, 0);
+            grandTotalSeconds = intervals.reduce((acc, item) => {
+                return acc + (item.h * 3600) + (item.m * 60) + item.s;
+            }, 0);
         }
 
         function loadIntervalSintaks(index) {
@@ -462,18 +783,50 @@
             updateDisplay();
         }
 
-        function openSettings() { renderIntervalInputs(); modalOverlay.classList.add('active'); }
-        function closeSettings() { modalOverlay.classList.remove('active'); }
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && isRunning) {
+                requestWakeLock();
+            }
+            if (!document.hidden && isRunning) {
+                tick();
+            }
+        });
+
+        function openSettings() {
+            renderIntervalInputs();
+            modalOverlay.classList.add('active');
+        }
+
+        function closeSettings() {
+            modalOverlay.classList.remove('active');
+        }
 
         document.addEventListener('keydown', (e) => {
-            const isInput = document.activeElement.tagName === 'INPUT';
-            if (modalOverlay.classList.contains('active')) { if (e.key === 'Escape') closeSettings(); return; }
+            const activeElement = document.activeElement;
+            const isInput = activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA';
+
+            if (modalOverlay.classList.contains('active')) {
+                if (e.key === 'Escape') {
+                    closeSettings();
+                }
+                return;
+            }
+
             if (isInput) return;
 
-            if (e.code === 'Space') { e.preventDefault(); toggleTimer(); }
-            else if (e.key.toLowerCase() === 'f') { e.preventDefault(); toggleFullscreen(); }
-            else if (e.key.toLowerCase() === 'r') { e.preventDefault(); resetTimer(); }
-            else if (e.key.toLowerCase() === 'p') { e.preventDefault(); openSettings(); }
+            if (e.code === 'Space') {
+                e.preventDefault();
+                toggleTimer();
+            } else if (e.key.toLowerCase() === 'f') {
+                e.preventDefault();
+                toggleFullscreen();
+            } else if (e.key.toLowerCase() === 'r') {
+                e.preventDefault();
+                resetTimer();
+            } else if (e.key.toLowerCase() === 'p') {
+                e.preventDefault();
+                openSettings();
+            }
         });
 
         function toggleIntervalMode() {
@@ -504,17 +857,95 @@
             });
         }
 
-        function addIntervalItem() { intervals.push({ name: `Sintaks ${intervals.length + 1}`, h: 0, m: 10, s: 0 }); renderIntervalInputs(); }
-        function removeIntervalItem(idx) { if (intervals.length > 1) { intervals.splice(idx, 1); renderIntervalInputs(); } }
-        function saveSettings() { isIntervalMode = document.getElementById('enableIntervals').checked; toggleTotalTimerVisibility(); closeSettings(); resetTimer(); }
+        function addIntervalItem() {
+            intervals.push({ name: `Sintaks ${intervals.length + 1}`, h: 0, m: 10, s: 0 });
+            renderIntervalInputs();
+        }
 
-        window.toggleTimer = toggleTimer; window.resetTimer = resetTimer; window.adjustTime = adjustTime;
-        window.toggleFullscreen = toggleFullscreen; window.openSettings = openSettings; window.closeSettings = closeSettings;
-        window.toggleIntervalMode = toggleIntervalMode; window.toggleTotalTimerVisibility = toggleTotalTimerVisibility;
-        window.addIntervalItem = addIntervalItem; window.removeIntervalItem = removeIntervalItem; window.saveSettings = saveSettings;
+        function removeIntervalItem(idx) {
+            if (intervals.length > 1) {
+                intervals.splice(idx, 1);
+                renderIntervalInputs();
+            }
+        }
+
+        function saveSettings() {
+            isIntervalMode = document.getElementById('enableIntervals').checked;
+            toggleTotalTimerVisibility();
+            closeSettings();
+            resetTimer();
+        }
+
+        /* AKSI TOMBOL BADGE KODE ROOM */
+        async function initRemoteRoom() {
+            if (roomRef) {
+                await remove(roomRef);
+            }
+
+            roomPin = Math.floor(1000 + Math.random() * 9000).toString();
+            
+            document.getElementById('hpIconSvg').style.display = 'none';
+            const pinTxt = document.getElementById('pinTextDisplay');
+            pinTxt.textContent = roomPin;
+            pinTxt.style.display = 'inline';
+
+            roomRef = ref(db, 'sessions/' + roomPin);
+            stateRef = ref(db, 'sessions/' + roomPin + '/state');
+            cmdRef = ref(db, 'sessions/' + roomPin + '/command');
+
+            onDisconnect(roomRef).remove();
+
+            await syncToFirebase();
+
+            onValue(cmdRef, (snapshot) => {
+                const command = snapshot.val();
+                if (!command || !command.action) return;
+
+                if (command.action === 'TOGGLE') toggleTimer();
+                else if (command.action === 'RESET') resetTimer();
+                else if (command.action === '+10') adjustTime(10);
+                else if (command.action === '-10') adjustTime(-10);
+                else if (command.action === '+5') adjustTime(5);
+                else if (command.action === '-5') adjustTime(-5);
+                else if (command.action === 'NEXT' && currentIntervalIndex < intervals.length - 1) {
+                    switchSintaksTarget(currentIntervalIndex + 1);
+                } else if (command.action === 'PREV' && currentIntervalIndex > 0) {
+                    switchSintaksTarget(currentIntervalIndex - 1);
+                }
+
+                set(cmdRef, null);
+            });
+        }
+
+        function syncToFirebase() {
+            if (!stateRef) return;
+            return set(stateRef, {
+                targetEndTimeInterval: targetEndTimeInterval || 0,
+                targetEndTimeGrandTotal: targetEndTimeGrandTotal || 0,
+                timerStartTimestamp: timerStartTimestamp || 0,
+                elapsedTimeAccumulated: elapsedTimeAccumulated || 0,
+                isRunning: isRunning,
+                totalSeconds: totalSeconds,
+                grandTotalSeconds: grandTotalSeconds,
+                sintaksName: intervals[currentIntervalIndex] ? intervals[currentIntervalIndex].name : 'TIMER',
+                updatedAt: Date.now()
+            });
+        }
+
+        window.toggleTimer = toggleTimer;
+        window.resetTimer = resetTimer;
+        window.adjustTime = adjustTime;
+        window.toggleFullscreen = toggleFullscreen;
+        window.openSettings = openSettings;
+        window.closeSettings = closeSettings;
+        window.toggleIntervalMode = toggleIntervalMode;
+        window.toggleTotalTimerVisibility = toggleTotalTimerVisibility;
+        window.addIntervalItem = addIntervalItem;
+        window.removeIntervalItem = removeIntervalItem;
+        window.saveSettings = saveSettings;
+        window.initRemoteRoom = initRemoteRoom;
 
         resetTimer();
-        initWebSocket();
     </script>
 </body>
 </html>
