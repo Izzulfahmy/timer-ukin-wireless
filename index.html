@@ -340,7 +340,6 @@
             font-size: 0.95rem;
         }
 
-        /* HANYA ANGKA KODE DI POJOK KIRI ATAS (TITIK DIHAPUS) */
         .peer-status-box {
             position: absolute;
             top: 2vh;
@@ -363,7 +362,6 @@
 </head>
 <body>
 
-    <!-- Hanya Menampilkan Kode 4 Angka -->
     <div class="peer-status-box" id="statusBox">
         <div class="pin-number-text" id="pinDisplay">----</div>
     </div>
@@ -453,10 +451,10 @@
         </div>
     </div>
 
-    <!-- FIREBASE SDK ES MODULES -->
+    <!-- FIREBASE SDK v10 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        import { getDatabase, ref, set, remove, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCVeFH7BlVTiS93w4LSLIgDF6KtJzx3xvk",
@@ -822,17 +820,22 @@
             resetTimer();
         }
 
-        /* INTEGRASI FIREBASE REALTIME DATABASE */
+        /* INTEGRASI FIREBASE DB INSTAN + OTOMATIS HAPUS */
         const roomPin = Math.floor(1000 + Math.random() * 9000).toString();
         document.getElementById('pinDisplay').textContent = roomPin;
 
         const sessionRef = ref(db, 'sessions/' + roomPin);
         const cmdRef = ref(db, 'sessions/' + roomPin + '/command');
 
+        // Fitur Pembersihan Otomatis: Hapus room jika laptop menutup halaman / refresh
+        onDisconnect(sessionRef).remove();
+
         const connectedRef = ref(db, ".info/connected");
         onValue(connectedRef, (snap) => {
             if (snap.val() === true) {
                 document.getElementById('statusBox').classList.add('connected');
+                // Langsung buat data room di Firebase begitu laptop online
+                syncToFirebase();
             } else {
                 document.getElementById('statusBox').classList.remove('connected');
             }

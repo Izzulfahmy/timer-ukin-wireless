@@ -171,7 +171,7 @@
                 // Cek ketersediaan sesi di Firebase
                 const snap = await get(sessionRef);
                 if (!snap.exists()) {
-                    alert('Kode PIN ' + pin + ' tidak ditemukan! Pastikan index.html di laptop sudah terbuka.');
+                    alert('Kode PIN ' + pin + ' tidak ditemukan / room belum aktif!');
                     btn.textContent = "HUBUNGKAN";
                     btn.disabled = false;
                     return;
@@ -194,6 +194,10 @@
                         remoteTotalSec = data.totalSeconds;
                         remoteGrandSec = data.grandTotalSeconds;
                         document.getElementById('remoteSintaksName').textContent = data.sintaksName || 'TIMER';
+                    } else {
+                        // Jika room terhapus dari laptop (refresh/close), kembalikan remote ke menu awal
+                        alert('Koneksi terputus! Laptop me-refresh atau menutup halaman.');
+                        location.reload();
                     }
                 });
 
