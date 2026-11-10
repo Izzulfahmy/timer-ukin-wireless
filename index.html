@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Timer Sukses Ukin</title>
-    <!-- Library MQTT over WebSockets -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -471,7 +469,24 @@
         </div>
     </div>
 
-    <script>
+    <!-- FIREBASE SDK ES MODULES -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCVeFH7BlVTiS93w4LSLIgDF6KtJzx3xvk",
+            authDomain: "belajarfirebase-456608.firebaseapp.com",
+            projectId: "belajarfirebase-456608",
+            storageBucket: "belajarfirebase-456608.firebasestorage.app",
+            messagingSenderId: "644048643792",
+            appId: "1:644048643792:web:f41282e7c380e76a4de0d5",
+            databaseURL: "https://belajarfirebase-456608-default-rtdb.firebaseio.com"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
         let countdown;
         let isRunning = false;
         let isIntervalMode = true;
@@ -485,7 +500,6 @@
         let remainingIntervalMs = 0;
         let remainingTotalMs = 0;
 
-        // TIMESTAMP GLOBAL UNTUK SINKRONISASI MILIDETIK
         let timerStartTimestamp = null;
         let elapsedTimeAccumulated = 0;
 
@@ -577,7 +591,7 @@
                 overlay.classList.remove('active');
             }
 
-            broadcastStateToRemote();
+            syncToFirebase();
         }
 
         function toggleTimer() {
@@ -687,7 +701,7 @@
             remainingIntervalMs = targetEndTimeInterval - now;
             remainingTotalMs = targetEndTimeGrandTotal - now;
             elapsedTimeAccumulated = now - timerStartTimestamp;
-            broadcastStateToRemote();
+            syncToFirebase();
         }
 
         function resetTimer() {
@@ -822,31 +836,25 @@
             resetTimer();
         }
 
-        /* INTEGRASI BROACASTCHANNEL & MQTT PRESISI MILIDETIK */
+        /* INTEGRASI FIREBASE REALTIME DATABASE PRESISI MILIDETIK */
         const roomPin = Math.floor(1000 + Math.random() * 9000).toString();
         document.getElementById('pinDisplay').textContent = roomPin;
 
-        const cmdTopic = "ukin_timer_cmd_" + roomPin;
-        const syncTopic = "ukin_timer_sync_" + roomPin;
+        const sessionRef = ref(db, 'sessions/' + roomPin);
+        const cmdRef = ref(db, 'sessions/' + roomPin + '/command');
 
-        // BroadcastChannel lokal untuk latensi 0ms di browser/hotspot lokal
-        const localBC = new BroadcastChannel('ukin_channel_' + roomPin);
-        localBC.onmessage = (e) => handleRemoteCommand(e.data);
-
-        const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
-
-        client.on('connect', () => {
-            document.getElementById('statusBox').classList.add('connected');
-            client.subscribe(cmdTopic);
-            broadcastStateToRemote();
+        // Status Koneksi Firebase
+        const connectedRef = ref(db, ".info/connected");
+        onValue(connectedRef, (snap) => {
+            if (snap.val() === true) {
+                document.getElementById('statusBox').classList.add('connected');
+            } else {
+                document.getElementById('statusBox').classList.remove('connected');
+            }
         });
 
-        client.on('offline', () => {
-            document.getElementById('statusBox').classList.remove('connected');
-        });
-
-        function broadcastStateToRemote() {
-            const payloadData = {
+        function syncToFirebase() {
+            set(sessionRef, {
                 targetEndTimeInterval,
                 targetEndTimeGrandTotal,
                 timerStartTimestamp,
@@ -854,35 +862,45 @@
                 isRunning,
                 totalSeconds,
                 grandTotalSeconds,
-                sintaksName: intervals[currentIntervalIndex] ? intervals[currentIntervalIndex].name : 'TIMER'
-            };
-
-            // Kirim via lokal BC (0ms) & WSS MQTT
-            localBC.postMessage(payloadData);
-            if (client && client.connected) {
-                client.publish(syncTopic, JSON.stringify(payloadData), { retain: true });
-            }
+                sintaksName: intervals[currentIntervalIndex] ? intervals[currentIntervalIndex].name : 'TIMER',
+                updatedAt: Date.now()
+            });
         }
 
-        function handleRemoteCommand(command) {
-            if (command === 'TOGGLE') toggleTimer();
-            else if (command === 'RESET') resetTimer();
-            else if (command === '+10') adjustTime(10);
-            else if (command === '-10') adjustTime(-10);
-            else if (command === '+5') adjustTime(5);
-            else if (command === '-5') adjustTime(-5);
-            else if (command === 'NEXT' && currentIntervalIndex < intervals.length - 1) {
+        // Mendengarkan Perintah Remote dari HP
+        onValue(cmdRef, (snapshot) => {
+            const command = snapshot.val();
+            if (!command) return;
+
+            if (command.action === 'TOGGLE') toggleTimer();
+            else if (command.action === 'RESET') resetTimer();
+            else if (command.action === '+10') adjustTime(10);
+            else if (command.action === '-10') adjustTime(-10);
+            else if (command.action === '+5') adjustTime(5);
+            else if (command.action === '-5') adjustTime(-5);
+            else if (command.action === 'NEXT' && currentIntervalIndex < intervals.length - 1) {
                 currentIntervalIndex++;
                 loadIntervalSintaks(currentIntervalIndex);
-            } else if (command === 'PREV' && currentIntervalIndex > 0) {
+            } else if (command.action === 'PREV' && currentIntervalIndex > 0) {
                 currentIntervalIndex--;
                 loadIntervalSintaks(currentIntervalIndex);
             }
-        }
 
-        client.on('message', (topic, message) => {
-            handleRemoteCommand(message.toString());
+            // Hapus perintah setelah dieksekusi
+            set(cmdRef, null);
         });
+
+        window.toggleTimer = toggleTimer;
+        window.resetTimer = resetTimer;
+        window.adjustTime = adjustTime;
+        window.toggleFullscreen = toggleFullscreen;
+        window.openSettings = openSettings;
+        window.closeSettings = closeSettings;
+        window.toggleIntervalMode = toggleIntervalMode;
+        window.toggleTotalTimerVisibility = toggleTotalTimerVisibility;
+        window.addIntervalItem = addIntervalItem;
+        window.removeIntervalItem = removeIntervalItem;
+        window.saveSettings = saveSettings;
 
         resetTimer();
     </script>

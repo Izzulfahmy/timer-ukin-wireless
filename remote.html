@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Remote Control UKIN</title>
-    <!-- Library MQTT over WebSockets -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
     <style>
         * { box-sizing: border-box; margin:0; padding:0; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background:#111; color:#fff; padding:16px; text-align:center; }
@@ -82,7 +80,7 @@
 
     <div id="loginBox">
         <input type="number" id="pinInput" class="input-pin" placeholder="PIN 4 ANGKA" maxlength="4">
-        <button class="btn-action" onclick="connectRemote()">HUBUNGKAN</button>
+        <button class="btn-action" id="btnConnect">HUBUNGKAN</button>
     </div>
 
     <div id="controlsBox" style="display:none;">
@@ -114,11 +112,27 @@
         </div>
     </div>
 
-    <script>
-        let client;
-        let localBC = null;
-        let cmdTopic = '';
-        let syncTopic = '';
+    <!-- FIREBASE SDK ES MODULES -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCVeFH7BlVTiS93w4LSLIgDF6KtJzx3xvk",
+            authDomain: "belajarfirebase-456608.firebaseapp.com",
+            projectId: "belajarfirebase-456608",
+            storageBucket: "belajarfirebase-456608.firebasestorage.app",
+            messagingSenderId: "644048643792",
+            appId: "1:644048643792:web:f41282e7c380e76a4de0d5",
+            databaseURL: "https://belajarfirebase-456608-default-rtdb.firebaseio.com"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let activePin = '';
+        let cmdRef = null;
+        let sessionRef = null;
 
         let remoteTargetInterval = null;
         let remoteTargetTotal = null;
@@ -136,57 +150,39 @@
             return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
         }
 
-        function applySyncData(data) {
-            remoteTargetInterval = data.targetEndTimeInterval;
-            remoteTargetTotal = data.targetEndTimeGrandTotal;
-            remoteStartTimestamp = data.timerStartTimestamp;
-            remoteAccumulatedTime = data.elapsedTimeAccumulated || 0;
-            remoteIsRunning = data.isRunning;
-            remoteTotalSec = data.totalSeconds;
-            remoteGrandSec = data.grandTotalSeconds;
-            document.getElementById('remoteSintaksName').textContent = data.sintaksName;
-        }
-
-        function connectRemote() {
+        document.getElementById('btnConnect').addEventListener('click', () => {
             const pin = document.getElementById('pinInput').value;
-            if(pin.length === 4) {
-                cmdTopic = "ukin_timer_cmd_" + pin;
-                syncTopic = "ukin_timer_sync_" + pin;
+            if (pin.length === 4) {
+                activePin = pin;
+                sessionRef = ref(db, 'sessions/' + activePin);
+                cmdRef = ref(db, 'sessions/' + activePin + '/command');
 
-                // BroadcastChannel lokal untuk koneksi 0 delay jika di browser/device sama
-                localBC = new BroadcastChannel('ukin_channel_' + pin);
-                localBC.onmessage = (e) => applySyncData(e.data);
+                onValue(sessionRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        document.getElementById('remoteStatus').textContent = 'TERHUBUNG (' + activePin + ')';
+                        document.getElementById('remoteStatus').className = 'status connected';
+                        document.getElementById('loginBox').style.display = 'none';
+                        document.getElementById('controlsBox').style.display = 'block';
 
-                client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
-
-                client.on('connect', () => {
-                    document.getElementById('remoteStatus').textContent = 'TERHUBUNG (' + pin + ')';
-                    document.getElementById('remoteStatus').className = 'status connected';
-                    document.getElementById('loginBox').style.display = 'none';
-                    document.getElementById('controlsBox').style.display = 'block';
-
-                    client.subscribe(syncTopic);
-                    startHighPrecisionTicker();
-                });
-
-                client.on('message', (topic, message) => {
-                    if (topic === syncTopic) {
-                        try {
-                            applySyncData(JSON.parse(message.toString()));
-                        } catch(e) {}
+                        remoteTargetInterval = data.targetEndTimeInterval;
+                        remoteTargetTotal = data.targetEndTimeGrandTotal;
+                        remoteStartTimestamp = data.timerStartTimestamp;
+                        remoteAccumulatedTime = data.elapsedTimeAccumulated || 0;
+                        remoteIsRunning = data.isRunning;
+                        remoteTotalSec = data.totalSeconds;
+                        remoteGrandSec = data.grandTotalSeconds;
+                        document.getElementById('remoteSintaksName').textContent = data.sintaksName || 'TIMER';
                     }
                 });
 
-                client.on('error', () => {
-                    alert('Gagal menyambung via Hotspot!');
-                });
+                startHighPrecisionTicker();
             } else {
                 alert('Masukkan 4 Angka PIN yang tertera di layar laptop!');
             }
-        }
+        });
 
         function startHighPrecisionTicker() {
-            // Ticker 100ms berbasis selisih timestamp asli (tanpa drift)
             setInterval(() => {
                 const now = Date.now();
                 if (remoteIsRunning && remoteTargetInterval && remoteTargetTotal) {
@@ -205,14 +201,16 @@
             }, 100);
         }
 
-        function sendCmd(cmd) {
-            if (localBC) {
-                localBC.postMessage(cmd);
-            }
-            if(client && client.connected) {
-                client.publish(cmdTopic, cmd);
+        function sendCmd(action) {
+            if (cmdRef) {
+                set(cmdRef, {
+                    action: action,
+                    timestamp: Date.now()
+                });
             }
         }
+
+        window.sendCmd = sendCmd;
     </script>
 </body>
 </html>
