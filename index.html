@@ -342,14 +342,15 @@
             font-size: 0.95rem;
         }
 
-        /* INDIKATOR TITIK POJOK KIRI ATAS & BADGE PIN */
+        /* STATUS POJOK KIRI ATAS: TITIK + KODE ANGKA DI BAWAHNYA */
         .peer-status-box {
             position: absolute;
             top: 2vh;
             left: 2vw;
             display: flex;
-            align-items: center;
-            gap: 8px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
             z-index: 50;
         }
 
@@ -362,27 +363,29 @@
             transition: background-color 0.3s ease;
         }
 
-        .peer-status-dot.connected {
+        .pin-number-text {
+            font-weight: 900;
+            font-size: 0.85rem;
+            color: #ff4444;
+            letter-spacing: 1px;
+            transition: color 0.3s ease;
+        }
+
+        .peer-status-box.connected .peer-status-dot {
             background-color: #28a745;
         }
 
-        .pin-badge {
-            font-weight: 900;
-            font-size: 0.85rem;
-            background: rgba(0,0,0,0.06);
-            padding: 3px 10px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            letter-spacing: 1px;
+        .peer-status-box.connected .pin-number-text {
+            color: #28a745;
         }
     </style>
 </head>
 <body>
 
-    <!-- Indikator Titik & PIN 4 Angka di Pojok Kiri Atas -->
-    <div class="peer-status-box">
-        <div class="peer-status-dot" id="statusDot" title="Status Remote"></div>
-        <div class="pin-badge" id="pinDisplay">PIN: ----</div>
+    <!-- Indikator Titik & Kode PIN di Bawahnya -->
+    <div class="peer-status-box" id="statusBox">
+        <div class="peer-status-dot"></div>
+        <div class="pin-number-text" id="pinDisplay">----</div>
     </div>
 
     <button class="fullscreen-btn" id="fullscreenBtn" onclick="toggleFullscreen()" title="Layar Penuh (Tekan F)">
@@ -571,6 +574,8 @@
             } else {
                 overlay.classList.remove('active');
             }
+
+            broadcastStateToRemote();
         }
 
         function toggleTimer() {
@@ -673,6 +678,7 @@
             const now = Date.now();
             remainingIntervalMs = targetEndTimeInterval - now;
             remainingTotalMs = targetEndTimeGrandTotal - now;
+            broadcastStateToRemote();
         }
 
         function resetTimer() {
@@ -805,22 +811,38 @@
             resetTimer();
         }
 
-        /* INTEGRASI MQTT BROKER PUBLIK DENGAN PIN 4 ANGKA */
+        /* INTEGRASI MQTT VIA WSS & BROADCAST PRESISI KE REMOTE */
         const roomPin = Math.floor(1000 + Math.random() * 9000).toString();
-        document.getElementById('pinDisplay').textContent = "PIN: " + roomPin;
-        const topicName = "ukin_timer_room_" + roomPin;
+        document.getElementById('pinDisplay').textContent = roomPin;
 
-        // Menggunakan public WebSocket MQTT broker gratis & zero-config
+        const cmdTopic = "ukin_timer_cmd_" + roomPin;
+        const syncTopic = "ukin_timer_sync_" + roomPin;
+
         const client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
 
         client.on('connect', () => {
-            document.getElementById('statusDot').classList.add('connected');
-            client.subscribe(topicName);
+            document.getElementById('statusBox').classList.add('connected');
+            client.subscribe(cmdTopic);
+            broadcastStateToRemote();
         });
 
         client.on('offline', () => {
-            document.getElementById('statusDot').classList.remove('connected');
+            document.getElementById('statusBox').classList.remove('connected');
         });
+
+        function broadcastStateToRemote() {
+            if (client && client.connected) {
+                const payload = JSON.stringify({
+                    targetEndTimeInterval,
+                    targetEndTimeGrandTotal,
+                    isRunning,
+                    totalSeconds,
+                    grandTotalSeconds,
+                    sintaksName: intervals[currentIntervalIndex] ? intervals[currentIntervalIndex].name : 'TIMER'
+                });
+                client.publish(syncTopic, payload, { retain: true });
+            }
+        }
 
         client.on('message', (topic, message) => {
             const command = message.toString();

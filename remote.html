@@ -8,15 +8,73 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
     <style>
         * { box-sizing: border-box; margin:0; padding:0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background:#111; color:#fff; padding:20px; text-align:center; }
-        h2 { margin-bottom: 16px; font-size: 1.3rem; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background:#111; color:#fff; padding:16px; text-align:center; }
+        h2 { margin-bottom: 12px; font-size: 1.2rem; }
+        
         .input-pin { width: 100%; padding: 14px; font-size: 1.6rem; text-align: center; border-radius: 8px; border: 2px solid #444; background: #222; color: #fff; margin-bottom: 12px; font-weight: bold; letter-spacing: 6px; }
-        .btn-action { padding: 16px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; border: none; background: #007bff; color: #fff; cursor: pointer; width: 100%; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .btn-main { grid-column: span 2; background: #28a745; font-size: 1.4rem; padding: 22px; }
+        .btn-action { padding: 14px; font-size: 1rem; font-weight: bold; border-radius: 8px; border: none; background: #007bff; color: #fff; cursor: pointer; width: 100%; }
+        .btn-action:active { opacity: 0.8; }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+        .btn-main { grid-column: span 2; background: #28a745; font-size: 1.3rem; padding: 18px; }
         .btn-reset { background: #dc3545; grid-column: span 2; }
+        
         .status { margin-bottom: 12px; font-weight: bold; font-size: 0.9rem; color: #ff4444; }
         .status.connected { color: #28a745; }
+
+        /* KARTU MONITOR DISPLAY TIMER HP */
+        .timer-monitor-box {
+            background: #222;
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .monitor-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+            padding-bottom: 6px;
+        }
+
+        .monitor-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .monitor-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #aaa;
+            text-transform: uppercase;
+        }
+
+        .monitor-val {
+            font-size: 1.4rem;
+            font-weight: 900;
+            font-variant-numeric: tabular-nums;
+            color: #fff;
+        }
+
+        .countup-val {
+            color: #00d2ff;
+        }
+
+        .sintaks-name-preview {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: #ffc107;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 90vw;
+        }
     </style>
 </head>
 <body>
@@ -28,45 +86,130 @@
         <button class="btn-action" onclick="connectRemote()">HUBUNGKAN</button>
     </div>
 
-    <div class="grid" id="controlsBox" style="display:none;">
-        <button class="btn-action btn-main" onclick="sendCmd('TOGGLE')">PLAY / PAUSE</button>
-        <button class="btn-action" style="background:#333;" onclick="sendCmd('-10')">-10s</button>
-        <button class="btn-action" style="background:#333;" onclick="sendCmd('+10')">+10s</button>
-        <button class="btn-action" style="background:#333;" onclick="sendCmd('-5')">-5s</button>
-        <button class="btn-action" style="background:#333;" onclick="sendCmd('+5')">+5s</button>
-        <button class="btn-action" style="background:#444;" onclick="sendCmd('PREV')">‹ Sintaks Lalu</button>
-        <button class="btn-action" style="background:#444;" onclick="sendCmd('NEXT')">Sintaks Next ›</button>
-        <button class="btn-action btn-reset" onclick="sendCmd('RESET')">RESET</button>
+    <div id="controlsBox" style="display:none;">
+        <!-- DUAL TIMER & HITUNG MAJU (STOPWATCH) DISPLAY REMOTE -->
+        <div class="timer-monitor-box">
+            <div class="sintaks-name-preview" id="remoteSintaksName">Sintaks: -</div>
+            <div class="monitor-row">
+                <span class="monitor-label">Timer Sintaks</span>
+                <span class="monitor-val" id="remoteIntervalDisp">00:00:00</span>
+            </div>
+            <div class="monitor-row">
+                <span class="monitor-label">Timer Total</span>
+                <span class="monitor-val" id="remoteTotalDisp">00:00:00</span>
+            </div>
+            <div class="monitor-row">
+                <span class="monitor-label">Hitung Maju (Count-up)</span>
+                <span class="monitor-val countup-val" id="remoteCountUpDisp">00:00:00</span>
+            </div>
+        </div>
+
+        <div class="grid">
+            <button class="btn-action btn-main" onclick="sendCmd('TOGGLE')">PLAY / PAUSE</button>
+            <button class="btn-action" style="background:#333;" onclick="sendCmd('-10')">-10s</button>
+            <button class="btn-action" style="background:#333;" onclick="sendCmd('+10')">+10s</button>
+            <button class="btn-action" style="background:#333;" onclick="sendCmd('-5')">-5s</button>
+            <button class="btn-action" style="background:#333;" onclick="sendCmd('+5')">+5s</button>
+            <button class="btn-action" style="background:#444;" onclick="sendCmd('PREV')">‹ Sintaks Lalu</button>
+            <button class="btn-action" style="background:#444;" onclick="sendCmd('NEXT')">Sintaks Next ›</button>
+            <button class="btn-action btn-reset" onclick="sendCmd('RESET')">RESET</button>
+        </div>
     </div>
 
     <script>
         let client;
-        let activeTopic = '';
+        let cmdTopic = '';
+        let syncTopic = '';
+
+        let remoteTargetInterval = null;
+        let remoteTargetTotal = null;
+        let remoteIsRunning = false;
+        let remoteTotalSec = 0;
+        let remoteGrandSec = 0;
+
+        let countUpSeconds = 0;
+        let countUpTimer = null;
+
+        function formatTime(s) {
+            if (s < 0) s = 0;
+            const hrs = Math.floor(s / 3600);
+            const mins = Math.floor((s % 3600) / 60);
+            const secs = s % 60;
+            return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
 
         function connectRemote() {
             const pin = document.getElementById('pinInput').value;
             if(pin.length === 4) {
-                activeTopic = "ukin_timer_room_" + pin;
+                cmdTopic = "ukin_timer_cmd_" + pin;
+                syncTopic = "ukin_timer_sync_" + pin;
+
+                // Menggunakan WebSockets Secure (Port 8084) agar 100% tembus Hotspot HP
                 client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
 
                 client.on('connect', () => {
-                    document.getElementById('remoteStatus').textContent = 'TERHUBUNG (PIN: ' + pin + ')';
+                    document.getElementById('remoteStatus').textContent = 'TERHUBUNG (' + pin + ')';
                     document.getElementById('remoteStatus').className = 'status connected';
                     document.getElementById('loginBox').style.display = 'none';
-                    document.getElementById('controlsBox').style.display = 'grid';
+                    document.getElementById('controlsBox').style.display = 'block';
+
+                    client.subscribe(syncTopic);
+                    startLocalRemoteTicker();
+                });
+
+                client.on('message', (topic, message) => {
+                    if (topic === syncTopic) {
+                        try {
+                            const data = JSON.parse(message.toString());
+                            remoteTargetInterval = data.targetEndTimeInterval;
+                            remoteTargetTotal = data.targetEndTimeGrandTotal;
+                            remoteIsRunning = data.isRunning;
+                            remoteTotalSec = data.totalSeconds;
+                            remoteGrandSec = data.grandTotalSeconds;
+                            document.getElementById('remoteSintaksName').textContent = data.sintaksName;
+                        } catch(e) {}
+                    }
                 });
 
                 client.on('error', () => {
-                    alert('Gagal terhubung ke server!');
+                    alert('Gagal menyambung via Hotspot!');
                 });
             } else {
                 alert('Masukkan 4 Angka PIN yang tertera di layar laptop!');
             }
         }
 
+        function startLocalRemoteTicker() {
+            setInterval(() => {
+                if (remoteIsRunning && remoteTargetInterval && remoteTargetTotal) {
+                    const now = Date.now();
+                    const intervalSec = Math.max(0, Math.ceil((remoteTargetInterval - now) / 1000));
+                    const grandSec = Math.max(0, Math.ceil((remoteTargetTotal - now) / 1000));
+
+                    document.getElementById('remoteIntervalDisp').textContent = formatTime(intervalSec);
+                    document.getElementById('remoteTotalDisp').textContent = formatTime(grandSec);
+                } else {
+                    document.getElementById('remoteIntervalDisp').textContent = formatTime(remoteTotalSec);
+                    document.getElementById('remoteTotalDisp').textContent = formatTime(remoteGrandSec);
+                }
+            }, 100);
+
+            // Timer Hitung Maju (Stopwatch Count-Up) Tambahan di HP
+            setInterval(() => {
+                if (remoteIsRunning) {
+                    countUpSeconds++;
+                    document.getElementById('remoteCountUpDisp').textContent = formatTime(countUpSeconds);
+                }
+            }, 1000);
+        }
+
         function sendCmd(cmd) {
+            if (cmd === 'RESET') {
+                countUpSeconds = 0;
+                document.getElementById('remoteCountUpDisp').textContent = formatTime(0);
+            }
             if(client && client.connected) {
-                client.publish(activeTopic, cmd);
+                client.publish(cmdTopic, cmd);
             }
         }
     </script>
