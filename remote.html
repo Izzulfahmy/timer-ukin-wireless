@@ -132,7 +132,7 @@
 
         let activePin = '';
         let cmdRef = null;
-        let sessionRef = null;
+        let stateRef = null;
 
         let remoteTargetInterval = null;
         let remoteTargetTotal = null;
@@ -160,7 +160,7 @@
             }
 
             activePin = pin;
-            sessionRef = ref(db, 'sessions/' + activePin);
+            stateRef = ref(db, 'sessions/' + activePin + '/state');
             cmdRef = ref(db, 'sessions/' + activePin + '/command');
 
             const btn = document.getElementById('btnConnect');
@@ -168,8 +168,7 @@
             btn.disabled = true;
 
             try {
-                // Ambil snapshot room
-                const snap = await get(sessionRef);
+                const snap = await get(stateRef);
                 if (!snap.exists()) {
                     alert('PIN ' + pin + ' belum aktif! Silakan klik tombol ikon HP di laptop terlebih dahulu.');
                     btn.textContent = "HUBUNGKAN";
@@ -177,8 +176,7 @@
                     return;
                 }
 
-                // Berhasil terhubung, aktifkan sinkronisasi realtime
-                onValue(sessionRef, (snapshot) => {
+                onValue(stateRef, (snapshot) => {
                     const data = snapshot.val();
                     if (data) {
                         document.getElementById('remoteStatus').textContent = 'TERHUBUNG (' + activePin + ')';
@@ -202,7 +200,7 @@
 
                 startHighPrecisionTicker();
             } catch (err) {
-                alert('Gagal terhubung: ' + err.message);
+                alert('Gagal terhubung: ' + err.message + '\nPastikan rules Realtime Database di Firebase sudah diset publik (.read: true, .write: true)');
                 btn.textContent = "HUBUNGKAN";
                 btn.disabled = false;
             }

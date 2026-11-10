@@ -340,7 +340,6 @@
             font-size: 0.95rem;
         }
 
-        /* TOMBOL SIMBOL HP & KODE ROOM DI POJOK KIRI ATAS */
         .peer-status-box {
             position: absolute;
             top: 2vh;
@@ -386,7 +385,7 @@
             font-size: 1.1rem;
             color: #28a745;
             letter-spacing: 2px;
-            display: none; /* Baru muncul setelah tombol HP diklik */
+            display: none;
         }
     </style>
 </head>
@@ -523,7 +522,8 @@
         let wakeLock = null; 
 
         let roomPin = null;
-        let sessionRef = null;
+        let roomRef = null;
+        let stateRef = null;
         let cmdRef = null;
 
         const playIconPath = "M8 5v14l11-7z";
@@ -861,27 +861,23 @@
 
         /* AKSI TOMBOL SIMBOL HP: MEMBUAT ROOM SECARA EKSPLISIT */
         async function initRemoteRoom() {
-            // Hapus room lama jika ada
-            if (sessionRef) {
-                await remove(sessionRef);
+            if (roomRef) {
+                await remove(roomRef);
             }
 
-            // Generate PIN 4 Angka Baru
             roomPin = Math.floor(1000 + Math.random() * 9000).toString();
             const pinDisplay = document.getElementById('pinDisplay');
             pinDisplay.textContent = roomPin;
             pinDisplay.style.display = 'block';
 
-            sessionRef = ref(db, 'sessions/' + roomPin);
+            roomRef = ref(db, 'sessions/' + roomPin);
+            stateRef = ref(db, 'sessions/' + roomPin + '/state');
             cmdRef = ref(db, 'sessions/' + roomPin + '/command');
 
-            // Hapus otomatis di Firebase jika tab laptop ditutup / refresh
-            onDisconnect(sessionRef).remove();
+            onDisconnect(roomRef).remove();
 
-            // Tulis data room pertama kali ke Firebase
-            syncToFirebase();
+            await syncToFirebase();
 
-            // Dengarkan perintah dari HP Remote
             onValue(cmdRef, (snapshot) => {
                 const command = snapshot.val();
                 if (!command || !command.action) return;
@@ -905,15 +901,15 @@
         }
 
         function syncToFirebase() {
-            if (!sessionRef) return;
-            set(sessionRef, {
-                targetEndTimeInterval,
-                targetEndTimeGrandTotal,
-                timerStartTimestamp,
-                elapsedTimeAccumulated,
-                isRunning,
-                totalSeconds,
-                grandTotalSeconds,
+            if (!stateRef) return;
+            return set(stateRef, {
+                targetEndTimeInterval: targetEndTimeInterval || 0,
+                targetEndTimeGrandTotal: targetEndTimeGrandTotal || 0,
+                timerStartTimestamp: timerStartTimestamp || 0,
+                elapsedTimeAccumulated: elapsedTimeAccumulated || 0,
+                isRunning: isRunning,
+                totalSeconds: totalSeconds,
+                grandTotalSeconds: grandTotalSeconds,
                 sintaksName: intervals[currentIntervalIndex] ? intervals[currentIntervalIndex].name : 'TIMER',
                 updatedAt: Date.now()
             });
